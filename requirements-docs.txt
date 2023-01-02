@@ -8,6 +8,7 @@ myst-nb
 myst-parser
 linkify-it-py
 
+cartopy==0.19
 jupyter
 matplotlib
 hvplot
