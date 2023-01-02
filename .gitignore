@@ -1,0 +1,27 @@
+# Generic extension to ignore
+*.py[cod]
+.idea
+*.txt
+!*requirements.txt
+*.aux.xml
+__pycache__/
+*.gfs
+.tox
+.coverage
+cov.xml
+*.lock
+
+# Build options
+build/
+*.egg-info/
+dist/
+
+# Docs & Notebooks
+docs/_build/*
+!docs/_build/.jupyter_cache
+docs/api
+.ipynb_checkpoints
+/docs/notebooks/test.ipynb
+
+# Dask
+dask-worker-space/*
