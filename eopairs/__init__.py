@@ -1,4 +1,7 @@
-
+"""
+**EOPairs** library
+"""
+# flake8: noqa
 from .__meta__ import (
     __author__,
     __author_email__,
