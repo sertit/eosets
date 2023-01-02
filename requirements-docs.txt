@@ -10,7 +10,6 @@ linkify-it-py
 
 jupyter
 matplotlib
-cartopy
 hvplot
 geoviews
 
