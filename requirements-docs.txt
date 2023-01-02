@@ -14,4 +14,7 @@ matplotlib
 hvplot
 geoviews
 
+# workaround
+jinja==3.0.3
+
 -e .
