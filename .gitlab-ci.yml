@@ -38,7 +38,7 @@ upload_wheel:linux:
     - tags
 
 pages:
-  image: python:3.9-buster
+  image: $EO_CONTAINER:3.9
   stage: docs
   script:
     - python -m pip install --upgrade pip
