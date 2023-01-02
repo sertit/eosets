@@ -15,6 +15,6 @@ hvplot
 geoviews
 
 # workaround
-jinja==3.0.3
+jinja2==3.0.3
 
 -e .
