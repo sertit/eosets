@@ -1,7 +1,8 @@
 -r requirements.txt
 
 # Doc
-sphinx
+sphinx<6.0.0  # workaround
+ipython  # workaround
 sphinx-book-theme
 sphinx-copybutton
 myst-nb
@@ -15,6 +16,6 @@ hvplot
 geoviews
 
 # workaround
-jinja2==3.0.3
+# jinja2==3.0.3
 
 -e .
