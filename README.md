@@ -10,6 +10,6 @@ First the extent will be computed, then the reference will be cropped to the wan
 
 This library aims to implement several processes, such as:
 - pansharpening for multi-product data such as DIMAP (one product is PAN, the other MS)
-- constructing pre/post distaster sets
+- constructing pre/post disaster sets
 - constructing common grids between products on which to work
-- managing inSAR preprocessing...
+- coregistring products

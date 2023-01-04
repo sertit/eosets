@@ -1,0 +1,1 @@
+EOPAIRS_NAME = "eopairs"
