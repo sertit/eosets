@@ -1,4 +1,4 @@
-""" Radiometric processings for Pairs """
+""" Radiometric processes for Pairs """
 import logging
 from enum import unique
 from pathlib import Path

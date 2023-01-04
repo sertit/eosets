@@ -27,9 +27,11 @@ class Pairs:
         self.ref_prod: Product = READER.open(
             reference_path, remove_tmp, output_path, **kwargs
         )
+        """ Reference product (unique). The one on which everything will be aligned. """
 
         # Open children products
         self.children_prods = {}
+        """ Children products, to be aligned on the reference one. """
         for path in children_paths:
             child_prod: Product = READER.open(path, remove_tmp, output_path, **kwargs)
 
@@ -40,32 +42,47 @@ class Pairs:
         # -- Other parameters --
         # TODO : create a temp folder for the pairs ?
         self.output_path = output_path
+        """ Output path of the pairs. """
 
         # Full name
         # TODO (how to name pairs ???)
         self.full_name = f"{self.ref_prod.condensed_name}__{'_'.join(prod.condensed_name for prod in self.children_prods.values())}"
+        """ Pairs full name. """
 
         # Condensed name
         # TODO (how to name pairs ???)
 
         # Nodata (by default use EOReader's)
         self.nodata = kwargs.get("nodata")
+        """ Nodata of the pairs. """
 
         # Resolution (by default use EOReader's)
         self.resolution = kwargs.get("resolution")
+        """ Resolution of the pairs. """
 
         # Information regarding the pair composition
         self.has_child = len(self.children_prods) > 0
+        """ Does the pairs have at least one child? """
+
         self.has_children = len(self.children_prods) > 1
+        """ Does the pairs have children? """
+
         self.has_unique_child = len(self.children_prods) == 1
+        """ Does the pairs have a unique child? """
+
         self.same_constellation = self.homogeneous_attribute("constellation")
+        """ Are the pairs constituted of the same constellation? """
+
         self.same_sensor_type = self.homogeneous_attribute("sensor_type")
+        """ Are the pairs constituted of the same sensor type? """
+
         self.constellations = list(
             set(
                 [self.ref_prod.constellation]
                 + [prod.constellation for prod in self.children_prods.values()]
             )
         )
+        """ List of unique constellations constitutig the pairs """
 
         # if self.same_constellation:
         #     self.constellation = self.ref_prod.constellation
