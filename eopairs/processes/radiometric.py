@@ -26,36 +26,55 @@ class PshMethod(ListEnum):
 
     GDAL = "GDAL"
     """
-    Uses GDAL if arcpy is not available
+    Uses GDAL's weighted Brovey algorithm. The only method usable if :code:`arcpy` is not available.
     """
 
     IHS = "Intensity, Hue, and Saturation"
     """
-    Uses Intensity, Hue, and Saturation color space for data fusion.
+    Uses Intensity, Hue, and Saturation color space for data fusion. ⚠ Needs :code:`arcpy`!
     """
 
     BROVEY = "Brovey"
     """
-    Uses the Brovey algorithm based on spectral modeling for data fusion.
+    Uses the Brovey algorithm based on spectral modeling for data fusion. ⚠ Needs :code:`arcpy`!
     """
 
     SM = "SimpleMean"
     """
-    Uses the averaged value between the red, green, and blue values and the panchromatic pixel value.
+    Uses the averaged value between the red, green, and blue values and the panchromatic pixel value. ⚠ Needs :code:`arcpy`!
     """
 
     GS = "Gram-Schmidt"
     """
-    Uses the Gram-Schmidt spectral-sharpening algorithm to sharpen multispectral data.
+    Uses the Gram-Schmidt spectral-sharpening algorithm to sharpen multispectral data. ⚠ Needs :code:`arcpy`!
     """
 
 
 def pansharpen(
-    pairs: Pairs, method: PshMethod.GS, output_path=Union[str, Path, CloudPath]
+    pairs: Pairs,
+    method: PshMethod = PshMethod.GDAL,
+    output_path: Union[str, Path, CloudPath] = None,
 ) -> Union[Path, CloudPath]:
-    """"""
+    """
+    Pansharpening a pair (pairs with only one child), with the same constellation.
+    This process uses weights derived from ArcGis Pro.
+
+    ⚠ Some products have the panchromatic band inside themselves and therefore the pair can be composed of only one reference product (Landsat, Superview...)
+
+    ⚠ Only a RGBNIR stack will be pansharpen!
+
+    ⚠ Other methods than ~PshMethod.GDAL need :code:`arcpy` to be installed!
+
+    Args:
+        pairs (Pairs) : Pair which will be pansharpened
+        method (PshMethod): Pansharpening method (GDAL by default)
+        output_path (Union[str, Path, CloudPath]): Output path, where to write the pansharpened stack
+
+    Returns:
+
+    """
     # Some checks
-    assert pairs.has_unique_child
+    assert len(pairs.children_prods) <= 1
     assert pairs.same_constellation
 
     # Manage the products to have a PAN and a MS one

@@ -13,4 +13,4 @@ tempenv
 twine
 
 # Libs for all platforms
-eoreader>=0.18.1
+eoreader>=0.19.0

@@ -2,6 +2,7 @@
 from pathlib import Path
 from typing import Union
 
+import geopandas as gpd
 from cloudpathlib import CloudPath
 from eoreader.products import Product
 from eoreader.reader import Reader
@@ -17,7 +18,7 @@ class Pairs:
     def __init__(
         self,
         reference_path: Union[str, Path, CloudPath],
-        children_paths: Union[list, str, Path, CloudPath],
+        children_paths: Union[list, str, Path, CloudPath] = None,
         output_path: Union[str, Path, CloudPath] = None,
         remove_tmp: bool = None,
         **kwargs,
@@ -32,6 +33,10 @@ class Pairs:
         # Open children products
         self.children_prods = {}
         """ Children products, to be aligned on the reference one. """
+        if children_paths is None:
+            children_paths = []
+        if not isinstance(children_paths, list):
+            children_paths = [children_paths]
         for path in children_paths:
             child_prod: Product = READER.open(path, remove_tmp, output_path, **kwargs)
 
@@ -76,11 +81,11 @@ class Pairs:
         self.same_sensor_type = self.homogeneous_attribute("sensor_type")
         """ Are the pairs constituted of the same sensor type? """
 
+        self.same_crs = self.homogeneous_method("crs")
+        """ Are the pairs constituted of the same sensor type? """
+
         self.constellations = list(
-            set(
-                [self.ref_prod.constellation]
-                + [prod.constellation for prod in self.children_prods.values()]
-            )
+            set(prod.constellation for prod in self.get_products_list())
         )
         """ List of unique constellations constitutig the pairs """
 
@@ -89,27 +94,88 @@ class Pairs:
         # else:
         #     self.constellation = None
 
-    def homogeneous_attribute(self, attr) -> bool:
-        """"""
+    def get_products_list(self) -> list:
+        """
+        Get all the products as a list. Reference is the first one.
+
+        Returns:
+            list: Products list
+        """
+        return [self.ref_prod] + list(self.children_prods.values())
+
+    def homogeneous_attribute(self, attr: str) -> bool:
+        """
+        Check if the given attribute is the same for all products constituting the pairs.
+
+        Args:
+            attr (str): Attribute to be cecked. Must be available in EOReader's Product
+
+        Returns:
+            bool: True if this attribute is the same for all products constituting the pairs.
+        """
         return all(
             getattr(self.ref_prod, attr) == getattr(child, attr)
             for child in self.children_prods.values()
         )
 
-    def check_compatibility(self) -> bool:
-        """"""
-        # TODO
+    def homogeneous_method(self, attr: str) -> bool:
+        """
+        Check if the given attribute is the same for all products constituting the pairs.
+
+        Args:
+            attr (str): Attribute to be cecked. Must be available in EOReader's Product
+
+        Returns:
+            bool: True if this attribute is the same for all products constituting the pairs.
+        """
+        return all(
+            getattr(self.ref_prod, attr)() == getattr(child, attr)()
+            for child in self.children_prods.values()
+        )
+
+    def check_compatibility(self) -> None:
+        """
+        Check if the products are coherent between each other, in order to create pairs
+        If not, throws a IncompatibleProducts error.
+
+        Raises:
+            IncompatibleProducts: Products are incompatible and therefore pairs cannot be created.
+        """
+        # Check overlap
+
+        # Check...
         pass
 
-    def overlapping_footprint(self) -> bool:
-        """"""
-        # TODO
-        pass
+    def overlapping_footprint(self) -> gpd.GeoDataFrame:
+        """
+        Get the footprint of the overlapping area between every product of the pairs.
 
-    def overlapping_extent(self) -> bool:
-        """"""
-        # TODO
-        pass
+        Returns:
+            gpd.GeoDataFrame: Footprint of the overlapping area
+        """
+        overlapping_footprint: gpd.GeoDataFrame = self.ref_prod.footprint()
+        for prod in self.children_prods.values():
+            overlapping_footprint = overlapping_footprint.overlay(
+                prod.footprint().to_crs(self.ref_prod.crs())
+            )
+
+        return overlapping_footprint
+
+    def overlapping_extent(self) -> gpd.GeoDataFrame:
+        """
+        Get the extent of the overlapping area between every product of the pairs.
+
+        Returns:
+            gpd.GeoDataFrame: Extent of the overlapping area
+
+        """
+        overlapping_extent: gpd.GeoDataFrame = self.ref_prod.extent()
+        for prod in self.children_prods.values():
+            overlapping_extent = overlapping_extent.overlay(
+                prod.extent().to_crs(self.ref_prod.crs())
+            )
+
+        return overlapping_extent
 
     def load(self) -> bool:
         """"""
