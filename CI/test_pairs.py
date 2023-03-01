@@ -2,7 +2,7 @@
 from sertit import ci
 
 from CI.scripts_utils import data_path
-from eopairs.multi_pairs import MultiPairs
+from eosets.multi_pairs import MultiPairs
 
 ci.reduce_verbosity()
 

@@ -1,4 +1,4 @@
-name: eopairs
+name: eosets
 channels:
   - conda-forge
 dependencies:

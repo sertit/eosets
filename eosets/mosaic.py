@@ -18,8 +18,8 @@ from eoreader.utils import UINT16_NODATA
 from sertit import rasters
 from sertit.misc import ListEnum
 
-from eopairs.exceptions import IncompatibleProducts
-from eopairs.utils import EOPAIRS_NAME
+from eosets.exceptions import IncompatibleProducts
+from eosets.utils import EOPAIRS_NAME
 
 READER = Reader()
 

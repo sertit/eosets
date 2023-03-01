@@ -2,7 +2,7 @@ import os
 
 import setuptools
 
-from eopairs.__meta__ import (
+from eosets.__meta__ import (
     __author__,
     __author_email__,
     __description__,

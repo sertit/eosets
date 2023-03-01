@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import eopairs
+import eosets
 
 # -- General configuration ------------------------------------------------
 
@@ -78,16 +78,16 @@ templates_path = ["_templates"]
 master_doc = "index"
 
 # General information about the project.
-project = eopairs.__title__
-copyright = eopairs.__copyright__[10:]
-author = eopairs.__author__
+project = eosets.__title__
+copyright = eosets.__copyright__[10:]
+author = eosets.__author__
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = eopairs.__version__
+version = eosets.__version__
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -108,7 +108,7 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
     "__init__.py",
-    "eopairs/data/*"
+    "eosets/data/*"
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -125,7 +125,7 @@ html_theme = "sphinx_book_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "repository_url": eopairs.__url__,
+    "repository_url": eosets.__url__,
     "use_repository_button": True,
     "use_issues_button": True,
     "use_edit_page_button": False,
@@ -135,7 +135,7 @@ html_theme_options = {
     "extra_navbar": "",
 }
 
-html_logo = "_static/eopairs.png"
+html_logo = "_static/eosets.png"
 html_title = ""
 
 html_favicon = "_static/favicon.png"
@@ -181,7 +181,7 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "eopairs.tex",
+        "eosets.tex",
         "EOPairs Documentation",
         "ICube-SERTIT",
         "manual",
@@ -192,7 +192,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "eopairs", "EOPairs Documentation", [author], 1)]
+man_pages = [(master_doc, "eosets", "EOPairs Documentation", [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -202,10 +202,10 @@ man_pages = [(master_doc, "eopairs", "EOPairs Documentation", [author], 1)]
 texinfo_documents = [
     (
         master_doc,
-        "eopairs",
+        "eosets",
         "EOPairs Documentation",
         author,
-        "eopairs",
+        "eosets",
         "One line description of project.",
         "Miscellaneous",
     )
@@ -219,7 +219,7 @@ intersphinx_mapping = {
 
 add_function_parentheses = False
 add_module_names = False
-modindex_common_prefix = ["eopairs."]
+modindex_common_prefix = ["eosets."]
 
 
 def _html_page_context(app, pagename, templatename, context, doctree):

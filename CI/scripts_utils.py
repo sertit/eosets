@@ -8,7 +8,7 @@ from cloudpathlib import AnyPath, CloudPath
 from eoreader.reader import Reader
 from sertit import ci
 
-from eopairs.utils import EOPAIRS_NAME
+from eosets.utils import EOPAIRS_NAME
 
 LOGGER = logging.getLogger(EOPAIRS_NAME)
 READER = Reader()
@@ -34,15 +34,15 @@ def get_ci_db_dir() -> Union[CloudPath, Path]:
     if int(os.getenv(CI_PAIRS_S3, 0)):
         # ON S3
         ci.define_s3_client()
-        return AnyPath("s3://sertit-eopairs-ci")
+        return AnyPath("s3://sertit-eosets-ci")
     else:
         # ON DISK
         try:
             # CI
-            return AnyPath(ci.get_db3_path(), "CI", "eopairs")
+            return AnyPath(ci.get_db3_path(), "CI", "eosets")
         except NotADirectoryError:
             # Windows
-            path = AnyPath(r"//ds2/database03/CI/eopairs")
+            path = AnyPath(r"//ds2/database03/CI/eosets")
             if not path.is_dir():
                 raise NotADirectoryError("Impossible to find get_ci_db_dir")
 

@@ -4,7 +4,7 @@ from eoreader.bands import MNDWI, NDWI
 from sertit import ci
 
 from CI.scripts_utils import data_path
-from eopairs.mosaic import Mosaic
+from eosets.mosaic import Mosaic
 
 ci.reduce_verbosity()
 

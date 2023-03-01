@@ -12,8 +12,8 @@ from sertit import misc, strings
 from sertit.misc import ListEnum
 from sertit.rasters import MAX_CORES
 
-from eopairs.multi_pairs import MultiPairs
-from eopairs.utils import EOPAIRS_NAME
+from eosets.multi_pairs import MultiPairs
+from eosets.utils import EOPAIRS_NAME
 
 LOGGER = logging.getLogger(EOPAIRS_NAME)
 
