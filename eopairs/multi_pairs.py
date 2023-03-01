@@ -12,12 +12,12 @@ from eoreader.reader import Reader
 READER = Reader()
 
 
-class Pairs:
+class MultiPairs:
     """Class of multiple pairs"""
 
     def __init__(
         self,
-        reference_path: Union[str, Path, CloudPath],
+        reference_paths: Union[list, str, Path, CloudPath],
         children_paths: Union[list, str, Path, CloudPath] = None,
         output_path: Union[str, Path, CloudPath] = None,
         remove_tmp: bool = None,
@@ -25,13 +25,18 @@ class Pairs:
     ):
 
         # Open reference product
-        self.ref_prod: Product = READER.open(
-            reference_path, remove_tmp, output_path, **kwargs
-        )
-        """ Reference product (unique). The one on which everything will be aligned. """
+        self.reference_prods: dict = {}
+        """ Reference products (unique date and contiguous). The ones on which everything will be aligned. """
+
+        for path in reference_paths:
+            ref_prod: Product = READER.open(path, remove_tmp, output_path, **kwargs)
+
+            # TODO: ensure unique date and contiguous product
+            self.check_reference_compatibility()
+            self.reference_prods[ref_prod.condensed_name] = ref_prod
 
         # Open children products
-        self.children_prods = {}
+        self.children_prods: dict = {}
         """ Children products, to be aligned on the reference one. """
         if children_paths is None:
             children_paths = []
@@ -51,7 +56,9 @@ class Pairs:
 
         # Full name
         # TODO (how to name pairs ???)
-        self.full_name = f"{self.ref_prod.condensed_name}__{'_'.join(prod.condensed_name for prod in self.children_prods.values())}"
+        self.full_name = (
+            f"{'_'.join(prod.condensed_name for prod in self.children_prods.values())}"
+        )
         """ Pairs full name. """
 
         # Condensed name
@@ -101,7 +108,16 @@ class Pairs:
         Returns:
             list: Products list
         """
-        return [self.ref_prod] + list(self.children_prods.values())
+        return list(self.reference_prods.values()) + list(self.children_prods.values())
+
+    def get_first_reference_prod(self) -> Product:
+        """
+        Get first reference product, that should be coherent with all others
+
+        Returns:
+            Product: First reference product
+        """
+        return list(self.reference_prods.values())[0]
 
     def homogeneous_attribute(self, attr: str) -> bool:
         """
@@ -113,25 +129,44 @@ class Pairs:
         Returns:
             bool: True if this attribute is the same for all products constituting the pairs.
         """
+        ref_attr = getattr(self.get_first_reference_prod(), attr)
+
         return all(
-            getattr(self.ref_prod, attr) == getattr(child, attr)
-            for child in self.children_prods.values()
+            ref_attr == getattr(child, attr) for child in self.children_prods.values()
         )
 
     def homogeneous_method(self, attr: str) -> bool:
         """
-        Check if the given attribute is the same for all products constituting the pairs.
+        Check if the given method (with empty arguments) is the same for all products constituting the pairs.
 
         Args:
-            attr (str): Attribute to be cecked. Must be available in EOReader's Product
+            attr (str): Method to be cecked. Must be available in EOReader's Product
 
         Returns:
-            bool: True if this attribute is the same for all products constituting the pairs.
+            bool: True if this method is the same for all products constituting the pairs.
         """
+        ref_method = getattr(self.get_first_reference_prod(), attr)()
+
         return all(
-            getattr(self.ref_prod, attr)() == getattr(child, attr)()
+            ref_method == getattr(child, attr)()
             for child in self.children_prods.values()
         )
+
+    def check_reference_compatibility(self) -> None:
+        """
+        Check if the reference products are coherent between each other, in order to create a coherent reference product
+
+        TODO: same constellation ? same CRS ?...
+
+        If not, throws a IncompatibleProducts error.
+
+        Raises:
+            IncompatibleProducts: Products are incompatible and therefore pairs cannot be created.
+        """
+        # Check contiguous
+
+        # Check date ? necessary ?
+        pass
 
     def check_compatibility(self) -> None:
         """
@@ -145,6 +180,10 @@ class Pairs:
 
         # Check...
         pass
+
+    def get_reference_mtd(self):
+        """"""
+        raise NotImplementedError
 
     def overlapping_footprint(self) -> gpd.GeoDataFrame:
         """

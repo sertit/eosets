@@ -2,7 +2,7 @@
 from sertit import ci
 
 from CI.scripts_utils import data_path
-from eopairs.pairs import Pairs
+from eopairs.multi_pairs import MultiPairs
 
 ci.reduce_verbosity()
 
@@ -11,7 +11,7 @@ def test_pld_pairs():
     pld_pan = data_path() / "IMG_PHR1A_P_001"
     pld_ms = data_path() / "IMG_PHR1A_MS_004"
 
-    pairs = Pairs(pld_pan, pld_ms)
+    pairs = MultiPairs(pld_pan, pld_ms)
 
     ci.assert_val(pairs.has_child, True, "has_child")
     ci.assert_val(pairs.has_unique_child, True, "has_unique_child")
@@ -25,7 +25,7 @@ def test_maxar_pairs():
     maxar_pan = data_path() / "055670633040_01_P001_PAN"
     maxar_ms = data_path() / "055670633040_01_P001_MUL"
 
-    pairs = Pairs(maxar_pan, maxar_ms)
+    pairs = MultiPairs(maxar_pan, maxar_ms)
 
     ci.assert_val(pairs.has_child, True, "has_child")
     ci.assert_val(pairs.has_unique_child, True, "has_unique_child")
@@ -38,7 +38,7 @@ def test_maxar_pairs():
 def test_sv1_pairs():
     sv1_pan_ms = data_path() / "0032100150001_01"
 
-    pairs = Pairs(sv1_pan_ms)
+    pairs = MultiPairs(sv1_pan_ms)
 
     ci.assert_val(pairs.has_child, False, "has_child")
     ci.assert_val(pairs.has_unique_child, False, "has_unique_child")
@@ -51,7 +51,7 @@ def test_sv1_pairs():
 def test_l9_pairs():
     l9_pan_ms = data_path() / "LC09_L1TP_200030_20220201_20220201_02_T1.tar"
 
-    pairs = Pairs(l9_pan_ms)
+    pairs = MultiPairs(l9_pan_ms)
 
     ci.assert_val(pairs.has_child, False, "has_child")
     ci.assert_val(pairs.has_unique_child, False, "has_unique_child")

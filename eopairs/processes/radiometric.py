@@ -12,7 +12,7 @@ from sertit import misc, strings
 from sertit.misc import ListEnum
 from sertit.rasters import MAX_CORES
 
-from eopairs.pairs import Pairs
+from eopairs.multi_pairs import MultiPairs
 from eopairs.utils import EOPAIRS_NAME
 
 LOGGER = logging.getLogger(EOPAIRS_NAME)
@@ -51,7 +51,7 @@ class PshMethod(ListEnum):
 
 
 def pansharpen(
-    pairs: Pairs,
+    pairs: MultiPairs,
     method: PshMethod = PshMethod.GDAL,
     output_path: Union[str, Path, CloudPath] = None,
 ) -> Union[Path, CloudPath]:
@@ -66,7 +66,7 @@ def pansharpen(
     ⚠ Other methods than ~PshMethod.GDAL need :code:`arcpy` to be installed!
 
     Args:
-        pairs (Pairs) : Pair which will be pansharpened
+        pairs (MultiPairs) : Pair which will be pansharpened
         method (PshMethod): Pansharpening method (GDAL by default)
         output_path (Union[str, Path, CloudPath]): Output path, where to write the pansharpened stack
 
@@ -117,7 +117,7 @@ def pansharpen(
 
         # Manage Landsat data that hasn't a stack to pansharpen and the PAN band in the same product
         if isinstance(pan_prod, LandsatProduct):
-            ms_path = ms_prod.output / f"{ms_prod.condensed_name}_MS_stack.tif"
+            ms_path = ms_prod._output / f"{ms_prod.condensed_name}_MS_stack.tif"
             ms_prod.stack([BLUE, GREEN, RED, NIR], stack_path=ms_path)
             pan_path = pan_prod.get_band_paths([PAN])[PAN]
         else:
