@@ -1,25 +1,28 @@
 """ Class implementing the pairs """
 import logging
 import os
+import shutil
 import tempfile
 from collections import defaultdict
 from enum import unique
+from glob import glob
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Tuple, Union
 
 import geopandas as gpd
 import xarray as xr
 from cloudpathlib import AnyPath, CloudPath
 from eoreader import utils
-from eoreader.bands import BandNames, to_band, to_str
+from eoreader.bands import BandNames, is_spectral_band, to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
-from sertit import rasters
+from sertit import files, rasters
 from sertit.misc import ListEnum
 
+from eosets.env_vars import CI_EOSETS_BAND_FOLDER
 from eosets.exceptions import IncompatibleProducts
-from eosets.utils import EOPAIRS_NAME
+from eosets.utils import EOPAIRS_NAME, AnyPathType
 
 READER = Reader()
 
@@ -35,16 +38,25 @@ class ContiguityCheck(ListEnum):
     NONE = "none"
 
 
+@unique
+class MosaicMethod(ListEnum):
+    """Available mosaicing methods."""
+
+    GTIFF = "merge_gtiff"
+    VRT = "merge_vrt"
+
+
 class Mosaic:
     """Class of mosaic, composed by several contiguous EOReader's products acquired the same day"""
 
     def __init__(
         self,
-        paths: Union[list, str, Path, CloudPath],
-        output_path: Union[str, Path, CloudPath] = None,
+        paths: Union[list, str, AnyPathType],
+        output_path: Union[str, AnyPathType] = None,
         id: str = None,
-        remove_tmp: bool = None,
-        contiguity_check: ContiguityCheck = ContiguityCheck.EXTENT,
+        remove_tmp: bool = True,
+        contiguity_check: Union[ContiguityCheck, str] = ContiguityCheck.EXTENT,
+        mosaic_method: Union[MosaicMethod, str] = MosaicMethod.VRT,
         **kwargs,
     ):
         # Manage output
@@ -56,6 +68,17 @@ class Mosaic:
         self._output = None
         self._remove_tmp = remove_tmp
         """ Remove temporary files, propagated to EOReader's Products. """
+
+        # Manage output path
+        if output_path:
+            self._tmp_output = None
+            self._output = AnyPath(output_path)
+        else:
+            self._tmp_output = tempfile.TemporaryDirectory()
+            self._output = AnyPath(self._tmp_output.name)
+
+        self._tmp_process = self.output.joinpath("tmp_mosaic")
+        os.makedirs(self._tmp_process, exist_ok=True)
 
         # Manage reference product
         self.prods: dict = {}
@@ -80,6 +103,7 @@ class Mosaic:
         self.date = None
         """ Date of the mosaic. If not provided in kwargs, using the first product's date. """
 
+        contiguity_check = ContiguityCheck.convert_from(contiguity_check)[0]
         self._manage_prods(paths, contiguity_check, **kwargs)
 
         # Nodata (by default use EOReader's)
@@ -102,16 +126,10 @@ class Mosaic:
         """ Is the mosaic constituted of the same sensor type? """
 
         self.constellations = list(set(prod.constellation for prod in self.get_prods()))
-        """ List of unique constellations constitutig the pairs """
+        """ List of unique constellations constituting the pairs """
 
-        # Manage output path
-
-        if output_path:
-            self._tmp_output = None
-            self._output = AnyPath(output_path)
-        else:
-            self._tmp_output = tempfile.TemporaryDirectory()
-            self._output = AnyPath(self._tmp_output.name)
+        self.mosaic_method = MosaicMethod.convert_from(mosaic_method)[0]
+        """ Mosaicing method. If GTIFF is specified, the temporary files from every products will be removed, if VRT is spoecified, they will not."""
 
     def clean_tmp(self):
         """
@@ -136,21 +154,92 @@ class Mosaic:
         if self._tmp_output:
             self._tmp_output.cleanup()
 
-        elif self._remove_tmp_process:
+        elif self._remove_tmp:
+            files.remove(self._tmp_process)
             self.clean_tmp()
 
     @property
-    def output(self) -> Union[CloudPath, Path]:
-        """Output directory of the product, to write orthorectified data for example."""
+    def output(self) -> AnyPathType:
+        """
+        Output directory of the mosaic
+
+        Returns:
+            AnyPathType: Output path ofthe mosaic
+        """
         return self._output
 
     @output.setter
-    def output(self, value: str):
-        """Output directory of the product, to write orthorectified data for example."""
+    def output(self, value: Union[str, AnyPathType]) -> None:
+        """
+        Output directory of the mosaic
+
+        Args:
+            value (Union[str, AnyPathType]): Output path ofthe mosaic
+        """
         # Set the new output
         self._output = AnyPath(value)
         if not isinstance(self._output, CloudPath):
             self._output = self._output.resolve()
+
+        # Create temporary process folder
+        old_tmp_process = self._tmp_process
+        self._tmp_process = self._output.joinpath(f"tmp_{self.condensed_name}")
+        os.makedirs(self._tmp_process, exist_ok=True)
+
+        # Update for prods
+        for prod in self.get_prods():
+            prod.output = self._get_tmp_folder(writable=True)
+
+        # Move all files from old process folder into the new one
+        for file in files.listdir_abspath(old_tmp_process):
+            try:
+                shutil.move(str(file), self._tmp_process)
+            except shutil.Error:
+                # Don't overwrite file
+                pass
+
+        # Remove old output if existing into the new output
+        if self._tmp_output:
+            self._tmp_output.cleanup()
+            self._tmp_output = None
+
+    def _get_tmp_folder(self, writable: bool = False) -> AnyPathType:
+        """
+        Manage the case of CI bands
+
+        Returns:
+            AnyPathType : Band folder
+        """
+        tmp_folder = self._tmp_process
+
+        # Manage CI bands (when we do not write anything, read only)
+        if not writable:
+            ci_tmp_folder = os.environ.get(CI_EOSETS_BAND_FOLDER)
+            if ci_tmp_folder:
+                ci_tmp_folder = AnyPath(ci_tmp_folder)
+                if ci_tmp_folder.is_dir():
+                    # If we need a writable directory, check it
+                    tmp_folder = ci_tmp_folder
+
+        return tmp_folder
+
+    def _get_out_path(self, filename: str) -> Tuple[AnyPathType, bool]:
+        """
+        Returns the output path of a file to be written, depending on if it already exists or not (manages CI folders)
+
+        Args:
+            filename (str): Filename
+
+        Returns:
+            Tuple[AnyPathType , bool]: Output path and if the file already exists or not
+        """
+        out = self._get_tmp_folder() / filename
+        exists = True
+        if not out.exists():
+            exists = False
+            out = self._get_tmp_folder(writable=True) / filename
+
+        return out, exists
 
     def _manage_prods(
         self,
@@ -174,17 +263,25 @@ class Mosaic:
         if not isinstance(paths, list):
             paths = [paths]
 
+        # Remove EOReader tmp, the mosaic will save files in its tmp when needed
+        remove_tmp = True
+
         # Open first product as a reference
-        first_prod: Product = READER.open(
-            paths[0], remove_tmp=self._remove_tmp, output_path=self._output, **kwargs
-        )
+        first_prod: Product = READER.open(paths[0], remove_tmp=remove_tmp, **kwargs)
+        if first_prod is None:
+            raise ValueError(
+                f"There is no existing products in EOReader corresponding to {paths[0]}"
+            )
+
         self.prods[first_prod.condensed_name] = first_prod
 
         # Open others
         for path in paths[1:]:
-            prod: Product = READER.open(
-                path, remove_tmp=self._remove_tmp, output_path=self._output, **kwargs
-            )
+            prod: Product = READER.open(path, remove_tmp=remove_tmp, **kwargs)
+            if prod is None:
+                raise ValueError(
+                    f"There is no existing products in EOReader corresponding to {path}"
+                )
 
             # Ensure compatibility of the mosaic component, i.e. unique date and contiguous product
             self.check_compatibility(first_prod, prod)
@@ -205,6 +302,16 @@ class Mosaic:
         # TODO: if all same constellation, set it only once
         # TODO: add sth ?
         self.condensed_name = f"{self.date.strftime('%Y%m%d')}_{'-'.join(list(set([prod.constellation_id for prod in self.get_prods()])))}"
+
+        # Rename tmp_process and set product outputs
+        self._tmp_process = AnyPath(
+            shutil.move(
+                str(self._tmp_process),
+                str(self.output.joinpath(f"tmp_{self.condensed_name}")),
+            )
+        )
+        for prod in self.get_prods():
+            prod.output = self._get_tmp_folder(writable=True)
 
         if self.id is None:
             self.id = self.condensed_name
@@ -319,6 +426,7 @@ class Mosaic:
                     "The mosaic should have a contiguous footprint!"
                 )
         else:
+            LOGGER.warning("The contiguity of your mosaic won't be checked!")
             pass
 
     def read_mtd(self):
@@ -365,10 +473,44 @@ class Mosaic:
 
         return extent
 
-    def has_band(self, band: Union[list, BandNames, str]) -> bool:
+    def has_band(self, band: Union[BandNames, str]) -> bool:
+        """
+        Does this moasic have products with the specified band ?
+
+        By band, we mean:
+
+        - satellite band
+        - index
+        - DEM band
+        - cloud band
+
+        Args:
+            band (Union[BandNames, str]): EOReader band (optical, SAR, clouds, DEM)
+
+        Returns:
+            bool: True if the products has the specified band
+        """
         return all(prod.has_band(band) for prod in self.get_prods())
 
     def has_bands(self, bands: Union[list, BandNames, str]) -> bool:
+        """
+        Does this moasic have products with the specified bands ?
+
+        By band, we mean:
+
+        - satellite band
+        - index
+        - DEM band
+        - cloud band
+
+        See :code:`has_band` for a code example.
+
+        Args:
+            bands (Union[list, BandNames, str]): EOReader bands (optical, SAR, clouds, DEM)
+
+        Returns:
+            bool: True if the products has the specified band
+        """
 
         return all(prod.has_bands(bands) for prod in self.get_prods())
 
@@ -376,52 +518,77 @@ class Mosaic:
         self,
         bands: Union[list, BandNames, str],
         resolution: float = None,
-        merge_vrt: bool = True,
         **kwargs,
     ) -> dict:
         """"""
+        # Get merge function and extension
+        merge_fct = getattr(rasters, self.mosaic_method.value)
+        out_suffix = f"{self.mosaic_method.name.lower()}"
+
         # Convert just in case
         bands = to_band(bands)
 
+        # Get the bands to be loaded
+        band_paths = {}
+        bands_to_load = []
+        for band in bands:
+            band_path, exists = self._get_out_path(
+                f"{self.id}_{to_str(band)[0]}.{out_suffix}"
+            )
+            band_paths[band] = band_path
+            if not exists:
+                bands_to_load.append(band)
+
         # Check validity of the bands
         for prod in self.get_prods():
-            for band in bands:
+            for band in bands_to_load:
                 assert prod.has_band(
                     band
                 ), f"{prod.condensed_name} has not a {to_str(band)[0]} band."
 
         # Load and reorganize bands
-        band_paths = defaultdict(list)
+        prod_band_paths = defaultdict(list)
         for prod in self.get_prods():
             prod: Product
-            LOGGER.debug(f"*** Loading {to_str(bands)} for {prod.condensed_name} ***")
+            LOGGER.debug(
+                f"*** Loading {to_str(bands_to_load)} for {prod.condensed_name} ***"
+            )
 
             # Load bands
-            prod.load(bands, resolution, **kwargs).keys()
+            prod.load(bands_to_load, resolution, **kwargs).keys()
 
             # Store paths
-            # TODO: this only works with bands !!!! Not idx, DEM, clouds...
-            for band_name, band_path in prod.get_band_paths(
-                bands, resolution, **kwargs
-            ).items():
-                band_paths[band_name].append(str(band_path))
+            for band in bands_to_load:
+                if is_spectral_band(band):
+                    band_path = prod.get_band_paths([band], resolution, **kwargs)[band]
+                else:
+                    # Use glob fct as _get_band_folder is a tmpDirectory
+                    band_path = glob(
+                        os.path.join(prod._get_band_folder(), f"*{to_str(band)[0]}*")
+                    )[0]
+
+                prod_band_paths[band].append(str(band_path))
 
         # Merge
         merged_dict = {}
-        for band_name in band_paths:
-            LOGGER.debug(f"Merging bands {band_name.name}")
-            vrt_path = self._output / f"{self.id}_{to_str(band_name)[0]}.vrt"
-
-            if merge_vrt:
-                merge_fct = rasters.merge_vrt
-            else:
-                merge_fct = rasters.merge_gtiff
-
-            merge_fct(band_paths[band_name], vrt_path, **kwargs)
+        for band in band_paths:
+            output_path = band_paths[band]
+            if not output_path.is_file():
+                LOGGER.debug(f"Merging bands {to_str(band)[0]}")
+                if self.mosaic_method == MosaicMethod.VRT:
+                    prod_path = []
+                    for path in prod_band_paths[band]:
+                        out_path, exists = self._get_out_path(os.path.basename(path))
+                        if not exists:
+                            shutil.move(path, out_path)
+                        prod_path.append(out_path)
+                else:
+                    prod_path = prod_band_paths[band]
+                merge_fct(prod_path, output_path, **kwargs)
 
             # Load in memory and update attribute
-            merged_dict[band_name] = self._update_attrs(
-                rasters.read(vrt_path), bands, **kwargs
+            merged_dict[band] = self._update_attrs(
+                rasters.read(output_path), bands, **kwargs
             )
 
         # Collocate VRTs
@@ -447,7 +614,7 @@ class Mosaic:
         self,
         bands: list,
         resolution: float = None,
-        stack_path: Union[str, CloudPath, Path] = None,
+        stack_path: Union[str, AnyPathType] = None,
         save_as_int: bool = False,
         **kwargs,
     ) -> xr.DataArray:
@@ -457,7 +624,7 @@ class Mosaic:
         Args:
             bands (list): Bands and index combination
             resolution (float): Stack resolution. . If not specified, use the product resolution.
-            stack_path (Union[str, CloudPath, Path]): Stack path
+            stack_path (Union[str, AnyPathType]): Stack path
             save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
             **kwargs: Other arguments passed to :code:`load` or :code:`rioxarray.to_raster()` (such as :code:`compress`)
 

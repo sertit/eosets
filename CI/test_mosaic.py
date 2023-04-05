@@ -1,27 +1,57 @@
 """ Testing pairs """
+import os
+import tempfile
 
-from eoreader.bands import MNDWI, NDWI
+import pytest
+from eoreader.bands import CLOUDS, MNDWI, RED, SLOPE
+from eoreader.env_vars import DEM_PATH
 from sertit import ci
 
-from CI.scripts_utils import data_path
+from CI.scripts_utils import data_path, get_db_dir
+from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 
 ci.reduce_verbosity()
 
 
 def test_s2_mosaic():
+    dem_sub_dir_path = ["GLOBAL", "COPDEM_30m", "COPDEM_30m.vrt"]
+    os.environ[DEM_PATH] = str(get_db_dir().joinpath(*dem_sub_dir_path))
 
+    mosaic_path = data_path()
+    # from cloudpathlib import AnyPath
+    # mosaic_path = AnyPath("D:\_EXTRACTEO\DS3\CI\eosets\MOSAIC")
+
+    # Get some Sentinel-2 paths
     s2_32umu = (
-        data_path()
-        / "S2B_MSIL2A_20210623T102559_N0300_R108_T32UMU_20210623T133440.SAFE.zip"
+        mosaic_path
+        / "S2B_MSIL2A_20220330T102619_N0400_R108_T32UMU_20220330T141833.SAFE"
     )
-    s2_32umv = (
-        data_path()
-        / "S2B_MSIL2A_20210623T102559_N0300_R108_T32UMV_20210623T133440.SAFE.zip"
+    s2_32ulu = (
+        mosaic_path
+        / "S2B_MSIL2A_20220228T102849_N0400_R108_T32ULU_20220228T134712.SAFE"
+    )
+    s2_32ulv = (
+        mosaic_path
+        / "S2B_MSIL2A_20220228T102849_N0400_R108_T32ULV_20220228T134712.SAFE"
     )
 
-    mosaic = Mosaic(
-        [s2_32umu, s2_32umv], output_path=r"D:\_EXTRACTEO\OUTPUT\EOPairs\Mosaic"
-    )
+    with tempfile.TemporaryDirectory() as output:
+        # output = AnyPath(r"D:\_EXTRACTEO\OUTPUT\eosets\Mosaic")
 
-    mosaic.stack([NDWI, MNDWI], stack_path=mosaic._output / "water_stack.tif")
+        # First try with incompatible products
+        with pytest.raises(IncompatibleProducts):
+            mosaic = Mosaic(
+                [s2_32umu, s2_32ulu], output_path=output, mosaic_method="VRT"
+            )
+
+        # Then with compatible
+        mosaic = Mosaic([s2_32ulv, s2_32ulu], mosaic_method="VRT")
+        mosaic.output = output / mosaic.condensed_name
+
+        # Stack with a resolution of 60m
+        mosaic.stack(
+            [MNDWI, RED, CLOUDS, SLOPE],
+            stack_path=mosaic._output / "water_stack.tif",
+            resolution=60,
+        )

@@ -1,10 +1,9 @@
 """ Radiometric processes for Pairs """
 import logging
 from enum import unique
-from pathlib import Path
 from typing import Union
 
-from cloudpathlib import AnyPath, CloudPath
+from cloudpathlib import AnyPath
 from eoreader.bands import BLUE, GREEN, NIR, PAN, RED
 from eoreader.products import LandsatInstrument, LandsatProduct, Product
 from eoreader.reader import Constellation
@@ -13,7 +12,7 @@ from sertit.misc import ListEnum
 from sertit.rasters import MAX_CORES
 
 from eosets.multi_pairs import MultiPairs
-from eosets.utils import EOPAIRS_NAME
+from eosets.utils import EOPAIRS_NAME, AnyPathType
 
 LOGGER = logging.getLogger(EOPAIRS_NAME)
 
@@ -53,8 +52,8 @@ class PshMethod(ListEnum):
 def pansharpen(
     pairs: MultiPairs,
     method: PshMethod = PshMethod.GDAL,
-    output_path: Union[str, Path, CloudPath] = None,
-) -> Union[Path, CloudPath]:
+    output_path: Union[str, AnyPathType] = None,
+) -> AnyPathType:
     """
     Pansharpening a pair (pairs with only one child), with the same constellation.
     This process uses weights derived from ArcGis Pro.
@@ -68,9 +67,10 @@ def pansharpen(
     Args:
         pairs (MultiPairs) : Pair which will be pansharpened
         method (PshMethod): Pansharpening method (GDAL by default)
-        output_path (Union[str, Path, CloudPath]): Output path, where to write the pansharpened stack
+        output_path (Union[str, AnyPathType]): Output path, where to write the pansharpened stack
 
     Returns:
+        AnyPathType: Pansharpened file
 
     """
     # Some checks

@@ -1,4 +1,4 @@
-# EOPairs
+# EOSets
 
 This library aims to simplify any process working with pairs of EO data handled by [EOReader](https://github.com/sertit/eoreader).
 
