@@ -54,9 +54,9 @@ def test_s2_mosaic():
         mosaic = Mosaic([s2_32ulv, s2_32ulu], mosaic_method="VRT")
         mosaic.output = os.path.join(output, mosaic.condensed_name)
 
-        # Stack with a resolution of 60m
+        # Stack with a pixel_size of 60m
         mosaic.stack(
             [MNDWI, RED, CLOUDS, SLOPE],
             stack_path=mosaic._output / "water_stack.tif",
-            resolution=60,
+            pixel_size=60,
         )

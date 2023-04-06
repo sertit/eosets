@@ -26,7 +26,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     install_requires=[
-        "eoreader>=0.19.3",
+        "eoreader>=0.20.0",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

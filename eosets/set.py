@@ -1,14 +1,37 @@
+import logging
 import os
 import shutil
 import tempfile
 from abc import abstractmethod
-from typing import Tuple, Union
+from enum import unique
+from typing import Any, Tuple, Union
 
+import geopandas as gpd
+import xarray as xr
 from cloudpathlib import AnyPath, CloudPath
+from eoreader.bands import BandNames
+from eoreader.products import Product
 from sertit import files
+from sertit.misc import ListEnum
 
 from eosets.env_vars import CI_EOSETS_BAND_FOLDER
-from eosets.utils import AnyPathType
+from eosets.utils import EOSETS_NAME, AnyPathType
+
+LOGGER = logging.getLogger(EOSETS_NAME)
+
+
+@unique
+class GeometryCheck(ListEnum):
+    """Available geometry checks."""
+
+    FOOTPRINT = "footprint"
+    """ Ensure the checks are done regarding the footprints."""
+
+    EXTENT = "extent"
+    """ Ensure the checks are done regarding the extents."""
+
+    NONE = "none"
+    """ No geometric check will be applied."""
 
 
 class Set:
@@ -16,7 +39,6 @@ class Set:
 
     def __init__(
         self,
-        paths: Union[list, str, AnyPathType],
         output_path: Union[str, AnyPathType] = None,
         id: str = None,
         remove_tmp: bool = True,
@@ -59,9 +81,9 @@ class Set:
         self.nodata = None
         """ Nodata of the mosaic. If not provided in kwargs, using the first product's nodata. """
 
-        # Resolution (by default use EOReader's)
-        self.resolution = None
-        """ Resolution of the mosaic. If not provided in kwargs, using the first product's resolution. """
+        # Pixel size
+        self.pixel_size = None
+        """ Pixel size of the set. If not provided in kwargs, using the first product's pixel size. """
 
         self.crs = None
         """ CRS of the mosaic. If not provided in kwargs, using the first product's crs. """
@@ -74,6 +96,9 @@ class Set:
 
         self.constellations = None
         """ List of unique constellations constituting the set """
+
+        self.nof_prods: int = len(self.get_prods())
+        """ Number of products. """
 
     @abstractmethod
     def clean_tmp(self):
@@ -189,3 +214,145 @@ class Set:
             out = self._get_tmp_folder(writable=True) / filename
 
         return out, exists
+
+    @abstractmethod
+    def get_prods(self) -> list:
+        """
+        Get all the products as a list.
+
+        Returns:
+            list: Products list
+        """
+        raise NotImplementedError
+
+    def get_attr(self, attr: str, **kwargs) -> Any:
+        """
+        Get attribute, either from kwargs or from the first product (default)
+
+        Args:
+            attr (str): Wanted attribute
+            **kwargs: Other args
+
+        Returns:
+            Any: Attribute result
+        """
+        attr = kwargs.pop(attr, getattr(self.get_first_prod(), attr))
+        if callable(attr):
+            attr = attr()
+
+        return attr
+
+    def is_homogeneous(self, attr: str) -> bool:
+        """
+        Check if the given attribute is the same for all products constituting the mosaic.
+
+        Args:
+            attr (str): Attribute to be checked. Must be available in EOReader's Product
+
+        Returns:
+            bool: True if this attribute is the same for all products constituting the mosaic.
+        """
+        ref_attr = getattr(self.get_first_prod(), attr)
+
+        if self.nof_prods > 1:
+            if callable(ref_attr):
+                is_homogeneous = all(
+                    ref_attr() == getattr(child, attr)()
+                    for child in self.get_prods()[1:]
+                )
+            else:
+                is_homogeneous = all(
+                    ref_attr == getattr(child, attr) for child in self.get_prods()[1:]
+                )
+        else:
+            is_homogeneous = True
+
+        return is_homogeneous
+
+    def get_first_prod(self) -> Product:
+        """
+        Get first product, which should be coherent with all others
+
+        Returns:
+            Product: First reference product
+        """
+        return self.get_prods()[0]
+
+    @abstractmethod
+    def read_mtd(self):
+        """"""
+        # TODO: how ? Just return the fields that are shared between set's components ? Or create a XML from scratch ?
+        raise NotImplementedError
+
+    @abstractmethod
+    def footprint(self) -> gpd.GeoDataFrame:
+        """
+        Get the footprint of the set.
+
+        Returns:
+            gpd.GeoDataFrame: Footprint of the set
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def extent(self) -> gpd.GeoDataFrame:
+        """
+        Get the extent of the set.
+
+        Returns:
+            gpd.GeoDataFrame: Extent of the set
+
+        """
+        raise NotImplementedError
+
+    def has_band(self, band: Union[BandNames, str]) -> bool:
+        """
+        Does this moasic have products with the specified band ?
+
+        By band, we mean:
+
+        - satellite band
+        - index
+        - DEM band
+        - cloud band
+
+        Args:
+            band (Union[BandNames, str]): EOReader band (optical, SAR, clouds, DEM)
+
+        Returns:
+            bool: True if the products has the specified band
+        """
+        return all(prod.has_band(band) for prod in self.get_prods())
+
+    def has_bands(self, bands: Union[list, BandNames, str]) -> bool:
+        """
+        Does this moasic have products with the specified bands ?
+
+        By band, we mean:
+
+        - satellite band
+        - index
+        - DEM band
+        - cloud band
+
+        See :code:`has_band` for a code example.
+
+        Args:
+            bands (Union[list, BandNames, str]): EOReader bands (optical, SAR, clouds, DEM)
+
+        Returns:
+            bool: True if the products has the specified band
+        """
+
+        return all(prod.has_bands(bands) for prod in self.get_prods())
+
+    def _update_attrs(self, xarr: xr.DataArray, bands: list, **kwargs) -> xr.DataArray:
+        """
+        Update attributes of the given array
+        Args:
+            xarr (xr.DataArray): Array whose attributes need an update
+            bands (list): Bands
+        Returns:
+            xr.DataArray: Updated array
+        """
+        raise NotImplementedError

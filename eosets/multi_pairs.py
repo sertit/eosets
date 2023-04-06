@@ -68,9 +68,9 @@ class MultiPairs:
         self.nodata = kwargs.get("nodata")
         """ Nodata of the pairs. """
 
-        # Resolution (by default use EOReader's)
-        self.resolution = kwargs.get("resolution")
-        """ Resolution of the pairs. """
+        # Pixel size (by default use EOReader's)
+        self.pixel_size = kwargs.get("pixel_size")
+        """ Pixel size of the pairs. """
 
         # Information regarding the pair composition
         self.has_child = len(self.children_prods) > 0

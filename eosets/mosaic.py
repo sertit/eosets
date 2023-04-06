@@ -6,7 +6,7 @@ from collections import defaultdict
 from enum import unique
 from glob import glob
 from pathlib import Path
-from typing import Any, Union
+from typing import Union
 
 import geopandas as gpd
 import xarray as xr
@@ -20,21 +20,12 @@ from sertit import rasters
 from sertit.misc import ListEnum
 
 from eosets.exceptions import IncompatibleProducts
-from eosets.set import Set
+from eosets.set import GeometryCheck, Set
 from eosets.utils import EOSETS_NAME, AnyPathType
 
 READER = Reader()
 
 LOGGER = logging.getLogger(EOSETS_NAME)
-
-
-@unique
-class ContiguityCheck(ListEnum):
-    """Available contiguity checks."""
-
-    FOOTPRINT = "footprint"
-    EXTENT = "extent"
-    NONE = "none"
 
 
 @unique
@@ -54,20 +45,15 @@ class Mosaic(Set):
         output_path: Union[str, AnyPathType] = None,
         id: str = None,
         remove_tmp: bool = True,
-        contiguity_check: Union[ContiguityCheck, str] = ContiguityCheck.EXTENT,
+        contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
         mosaic_method: Union[MosaicMethod, str] = MosaicMethod.VRT,
         **kwargs,
     ):
-        """Output path of the pairs."""
-
-        super().__init__(paths, output_path, id, remove_tmp, **kwargs)
+        super().__init__(output_path, id, remove_tmp, **kwargs)
 
         # Manage reference product
         self.prods: dict = {}
         """ Products (contiguous and acquired the same day). """
-
-        self.nof_prods: int = 0
-        """ Number of products. """
 
         # We need the date in _manage_prods
         self.date = None
@@ -76,12 +62,12 @@ class Mosaic(Set):
         self.mosaic_method = MosaicMethod.convert_from(mosaic_method)[0]
         """ Mosaicing method. If GTIFF is specified, the temporary files from every products will be removed, if VRT is spoecified, they will not."""
 
-        contiguity_check = ContiguityCheck.convert_from(contiguity_check)[0]
+        contiguity_check = GeometryCheck.convert_from(contiguity_check)[0]
         self._manage_prods(paths, contiguity_check, **kwargs)
 
         # Fill attributes
         self.nodata = self.get_attr("nodata", **kwargs)
-        self.resolution = self.get_attr("resolution", **kwargs)
+        self.pixel_size = self.get_attr("pixel_size", **kwargs)
         self.crs = self.get_attr("crs", **kwargs)
         self.same_constellation: bool = self.is_homogeneous("constellation")
         self.same_crs: bool = self.is_homogeneous("crs")
@@ -112,7 +98,7 @@ class Mosaic(Set):
     def _manage_prods(
         self,
         paths: Union[list, str, Path, CloudPath],
-        contiguity_check: ContiguityCheck,
+        contiguity_check: GeometryCheck,
         **kwargs,
     ):
         """
@@ -120,7 +106,7 @@ class Mosaic(Set):
 
         Args:
             paths (Union[list, str, Path, CloudPath]): Paths of the mosaic
-            contiguity_check (ContiguityCheck): Method to check the contiguity of the mosaic
+            contiguity_check (GeometryCheck): Method to check the contiguity of the mosaic
             **kwargs: Other arguments
 
         Raises:
@@ -193,68 +179,19 @@ class Mosaic(Set):
         """
         return list(self.prods.values())
 
-    def get_first_prod(self) -> Product:
-        """
-        Get first product, which should be coherent with all others
-
-        Returns:
-            Product: First reference product
-        """
-        return self.get_prods()[0]
-
-    def get_attr(self, attr: str, **kwargs) -> Any:
-        """
-        Get attribute, either from kwargs or from the first product (default)
-
-        Args:
-            attr (str): Wanted attribute
-            **kwargs: Other args
-
-        Returns:
-            Any: Attribute result
-        """
-        attr = kwargs.pop("crs", getattr(self.get_first_prod(), attr))
-        if callable(attr):
-            attr = attr()
-
-        return attr
-
-    def is_homogeneous(self, attr: str) -> bool:
-        """
-        Check if the given attribute is the same for all products constituting the mosaic.
-
-        Args:
-            attr (str): Attribute to be checked. Must be available in EOReader's Product
-
-        Returns:
-            bool: True if this attribute is the same for all products constituting the mosaic.
-        """
-        ref_attr = getattr(self.get_first_prod(), attr)
-
-        if self.nof_prods > 1:
-            if callable(ref_attr):
-                is_homogeneous = all(
-                    ref_attr() == getattr(child, attr)()
-                    for child in self.get_prods()[1:]
-                )
-            else:
-                is_homogeneous = all(
-                    ref_attr == getattr(child, attr) for child in self.get_prods()[1:]
-                )
-        else:
-            is_homogeneous = True
-
-        return is_homogeneous
-
-    def check_compatibility(self, first_prod, prod) -> None:
+    def check_compatibility(self, first_prod: Product, prod: Product) -> None:
         """
         Check if the mosaic products are coherent between each other.
         - Same sensor type
         - Same date
 
-        TODO: same constellation ? same CRS ?...
+        TODO: same constellation ?
 
         If not, throws a IncompatibleProducts error.
+
+        Args:
+            first_prod(Product): First product, to be checked against
+            prod (Product): Product to check
 
         Raises:
             IncompatibleProducts: Incompatible products if not contiguous or not the same date
@@ -271,23 +208,23 @@ class Mosaic(Set):
                 f"Components of a mosaic should have the same date! {first_prod.date=} != {prod.date=}"
             )
 
-    def check_contiguity(self, check_contiguity: ContiguityCheck):
+    def check_contiguity(self, check_contiguity: GeometryCheck):
         """
         Check the contiguity of the mosaic
 
         Args:
-            check_contiguity (ContiguityCheck): Contiguity checking method
+            check_contiguity (GeometryCheck): Contiguity checking method
 
         Raises:
             IncompatibleProducts: Incompatible products if not contiguous according to the given method
         """
-        if check_contiguity == ContiguityCheck.EXTENT:
+        if check_contiguity == GeometryCheck.EXTENT:
             union_extent = self.extent()
             if len(union_extent) > 1:
                 raise IncompatibleProducts(
                     "The mosaic should have a contiguous extent!"
                 )
-        elif check_contiguity == ContiguityCheck.FOOTPRINT:
+        elif check_contiguity == GeometryCheck.FOOTPRINT:
             union_footprint = self.footprint()
             if len(union_footprint) > 1:
                 raise IncompatibleProducts(
@@ -341,51 +278,10 @@ class Mosaic(Set):
 
         return extent
 
-    def has_band(self, band: Union[BandNames, str]) -> bool:
-        """
-        Does this moasic have products with the specified band ?
-
-        By band, we mean:
-
-        - satellite band
-        - index
-        - DEM band
-        - cloud band
-
-        Args:
-            band (Union[BandNames, str]): EOReader band (optical, SAR, clouds, DEM)
-
-        Returns:
-            bool: True if the products has the specified band
-        """
-        return all(prod.has_band(band) for prod in self.get_prods())
-
-    def has_bands(self, bands: Union[list, BandNames, str]) -> bool:
-        """
-        Does this moasic have products with the specified bands ?
-
-        By band, we mean:
-
-        - satellite band
-        - index
-        - DEM band
-        - cloud band
-
-        See :code:`has_band` for a code example.
-
-        Args:
-            bands (Union[list, BandNames, str]): EOReader bands (optical, SAR, clouds, DEM)
-
-        Returns:
-            bool: True if the products has the specified band
-        """
-
-        return all(prod.has_bands(bands) for prod in self.get_prods())
-
     def load(
         self,
         bands: Union[list, BandNames, str],
-        resolution: float = None,
+        pixel_size: float = None,
         **kwargs,
     ) -> dict:
         """"""
@@ -423,12 +319,12 @@ class Mosaic(Set):
             )
 
             # Load bands
-            prod.load(bands_to_load, resolution, **kwargs).keys()
+            prod.load(bands_to_load, pixel_size, **kwargs).keys()
 
             # Store paths
             for band in bands_to_load:
                 if is_spectral_band(band):
-                    band_path = prod.get_band_paths([band], resolution, **kwargs)[band]
+                    band_path = prod.get_band_paths([band], pixel_size, **kwargs)[band]
                 else:
                     # Use glob fct as _get_band_folder is a tmpDirectory
                     band_path = glob(
@@ -465,23 +361,10 @@ class Mosaic(Set):
 
         return merged_dict
 
-    def _collocate_bands(self, bands: dict, master_xds: xr.DataArray = None) -> dict:
-        """
-        Collocate all bands from a dict if needed (if a raster shape is different)
-
-        Args:
-            bands (dict): Dict of bands to collocate if needed
-            master_xds (xr.DataArray): Master array
-
-        Returns:
-            dict: Collocated bands
-        """
-        return self.get_first_prod()._collocate_bands(bands, master_xds)
-
     def stack(
         self,
         bands: list,
-        resolution: float = None,
+        pixel_size: float = None,
         stack_path: Union[str, AnyPathType] = None,
         save_as_int: bool = False,
         **kwargs,
@@ -491,7 +374,7 @@ class Mosaic(Set):
 
         Args:
             bands (list): Bands and index combination
-            resolution (float): Stack resolution. . If not specified, use the product resolution.
+            pixel_size (float): Stack pixel size. . If not specified, use the product pixel size.
             stack_path (Union[str, AnyPathType]): Stack path
             save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
             **kwargs: Other arguments passed to :code:`load` or :code:`rioxarray.to_raster()` (such as :code:`compress`)
@@ -502,12 +385,12 @@ class Mosaic(Set):
         if stack_path:
             stack_path = AnyPath(stack_path)
             if stack_path.is_file():
-                return utils.read(stack_path, resolution=resolution)
+                return utils.read(stack_path, pixel_size=pixel_size)
             else:
                 os.makedirs(str(stack_path.parent), exist_ok=True)
 
         # Create the analysis stack
-        band_dict = self.load(bands, resolution=resolution, **kwargs)
+        band_dict = self.load(bands, pixel_size=pixel_size, **kwargs)
 
         # Stack bands
         if save_as_int:
@@ -525,6 +408,19 @@ class Mosaic(Set):
             utils.write(stack, stack_path, dtype=dtype, **kwargs)
 
         return stack
+
+    def _collocate_bands(self, bands: dict, master_xds: xr.DataArray = None) -> dict:
+        """
+        Collocate all bands from a dict if needed (if a raster shape is different)
+
+        Args:
+            bands (dict): Dict of bands to collocate if needed
+            master_xds (xr.DataArray): Master array
+
+        Returns:
+            dict: Collocated bands
+        """
+        return self.get_first_prod()._collocate_bands(bands, master_xds)
 
     def _update_attrs(self, xarr: xr.DataArray, bands: list, **kwargs) -> xr.DataArray:
         """

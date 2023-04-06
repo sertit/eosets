@@ -1,83 +1,77 @@
 """ Class implementing the pairs """
+from enum import unique
 from pathlib import Path
 from typing import Union
 
 import geopandas as gpd
+import xarray as xr
 from cloudpathlib import CloudPath
-from eoreader.products import Product
+from eoreader.bands import BandNames, to_band, to_str
 from eoreader.reader import Reader
+from sertit.misc import ListEnum
 
-# from eosets.exceptions import IncompatibleProducts
+from eosets.exceptions import IncompatibleProducts
+from eosets.mosaic import Mosaic
+from eosets.set import GeometryCheck, Set
 
-READER = Reader()
+READER = Reader
 
 
-class Pair:
+@unique
+class DiffMethod(ListEnum):
+    """Available difference methods."""
+
+    PRE_POST = "pre-post"
+    POST_PRE = "post-pre"
+
+
+class Pair(Set):
     """Class of multiple pairs"""
 
     def __init__(
         self,
         pivot_paths: Union[list, str, Path, CloudPath],
         child_paths: Union[list, str, Path, CloudPath] = None,
-        pivot_id: str = None,
-        child_id: str = None,
+        id: str = None,
         output_path: Union[str, Path, CloudPath] = None,
         remove_tmp: bool = True,
+        overlap_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
+        contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
         **kwargs,
     ):
-        """
-        Initialization of a Pair
-
-        Args:
-            pivot_paths:
-            child_paths:
-            pivot_id:
-            child_id:
-            output_path:
-            remove_tmp:
-            **kwargs:
-        """
-        # Manage output
-        # TODO : create a temp folder for the pairs ?
-        self.output_path = output_path
-        """ Output path of the pairs. """
-
-        # Remove temporary files
-        self._remove_tmp = remove_tmp
-        """ Remove temporary files, propagated to EOReader's Products. """
+        super().__init__(output_path, id, remove_tmp, **kwargs)
 
         # Manage reference product
-        self.reference_prods: dict = {}
-        """ Pivot products (unique date and contiguous). The ones on which everything will be aligned. """
+        self.pivot_mosaic = None
+        """ Pivot mosaic (unique date and contiguous). The one on which the child will be aligned. """
 
-        self.pivot_id: str = pivot_id
+        self.pivot_id = None
         """ ID of the pivot product """
 
-        self.is_pivot_single: bool = True
-        """ If the pivot products are composed of one product only. """
+        self.child_mosaic = None
+        """ Child mosaic (unique date and contiguous). The one which will be aligned on the pivot. """
 
-        self._manage_pivot(pivot_paths, pivot_id, **kwargs)
-
-        # Open child products
-        self.child_prods: dict = {}
-        """ Child products (unique date and contiguous), to be aligned on the reference one. """
-
-        self.child_id: str = child_id
+        self.child_id = None
         """ ID of the child product """
 
-        self.is_child_single: bool = True
-        """ If the child products are composed of one product only. """
-
         # Information regarding the pair composition
-        self.has_child: bool = True
+        self.has_child = None
         """ Does the pair have a child? (Pair with only one reference is allowed) """
 
-        self._manage_child(child_paths, child_id, **kwargs)
+        contiguity_check = GeometryCheck.convert_from(contiguity_check)[0]
+        overlap_check = GeometryCheck.convert_from(overlap_check)[0]
+        self._manage_mosaics(
+            pivot_paths,
+            child_paths,
+            output_path,
+            remove_tmp,
+            contiguity_check,
+            overlap_check,
+        )
 
-        # -- Other parameters --
         # Full name
         self.full_name = f"{self.pivot_id}_{self.child_id}"
-        """ Pairs full name. """
+        """ Pair full name. """
 
         # Condensed name
         self.condensed_name = self.full_name
@@ -87,194 +81,193 @@ class Pair:
         self.nodata = kwargs.get("nodata")
         """ Nodata of the pairs. """
 
-        # Resolution (by default use EOReader's)
-        self.resolution = kwargs.get("resolution")
-        """ Resolution of the pairs. """
+        # Pixel size (by default use EOReader's)
+        self.pixel_size = kwargs.get("pixel_size")
+        """ Pixel size of the pair. """
 
-        self.same_constellation = self.homogeneous_attribute("constellation")
+        self.same_constellation = self.is_homogeneous("constellation")
         """ Are the pairs constituted of the same constellation? """
 
-        self.same_sensor_type = self.homogeneous_attribute("sensor_type")
-        """ Are the pairs constituted of the same sensor type? """
+        self.constellations = list(set(prod.constellation for prod in self.get_prods()))
+        """ List of unique constellations constituting the pair """
 
-        self.same_crs = self.homogeneous_method("crs")
-        """ Are the pairs constituted of the same sensor type? """
-
-        self.constellations = list(
-            set(prod.constellation for prod in self.get_products_list())
-        )
-        """ List of unique constellations constitutig the pairs """
-
-        # if self.same_constellation:
-        #     self.constellation = self.ref_prod.constellation
-        # else:
-        #     self.constellation = None
-
-    def _manage_pivot(self, reference_paths, reference_id, **kwargs):
-        # Manage reference product
-
-        if reference_paths is None:
-            reference_paths = []
-        elif not isinstance(reference_paths, list):
-            reference_paths = [reference_paths]
-        for path in reference_paths:
-            ref_prod: Product = READER.open(
-                path,
-                remove_tmp=self._remove_tmp,
-                output_path=self.output_path,
-                **kwargs,
-            )
-
-            # TODO: ensure unique date and contiguous product
-            self.check_reference_compatibility()
-            self.reference_prods[ref_prod.condensed_name] = ref_prod
-
-        if self.pivot_id is None:
-            # TODO
-            pass
-
-    def _manage_child(self, child_paths, child_id, **kwargs):
-
-        if child_paths is None:
-            child_paths = []
-        elif not isinstance(child_paths, list):
-            child_paths = [child_paths]
-        for path in child_paths:
-            child_prod: Product = READER.open(
-                path,
-                remove_tmp=self._remove_tmp,
-                output_path=self.output_path,
-                **kwargs,
-            )
-
-            # Check the pair compatibility (if incompatible, the function throws a IncompatibleProducts error)
-            self.check_child_compatibility()
-            self.child_prods[child_prod.condensed_name] = child_prod
-
-        if self.child_id is None:
-            # TODO
-            pass
-
-    def get_products_list(self) -> list:
+    def clean_tmp(self):
         """
-        Get all the products as a list. Reference is the first one.
+        Clean the temporary directory of the current product
+        """
+        self.pivot_mosaic.clean_tmp()
+        self.child_mosaic.clean_tmp()
+
+    def clear(self):
+        """
+        Clear this product's cache
+        """
+        # -- Delete all cached properties and functions
+        self.pivot_mosaic.clear()
+        self.child_mosaic.clear()
+
+    def _manage_output(self):
+        """
+        Manage the output specifically for this child class
+        """
+        self.pivot_mosaic._manage_output()
+        self.child_mosaic._manage_output()
+
+    def get_prods(self) -> list:
+        """
+        Get all the products as a list.
 
         Returns:
             list: Products list
         """
-        return list(self.reference_prods.values()) + list(self.child_prods.values())
+        return self.pivot_mosaic.get_prods() + self.child_mosaic.get_prods()
 
-    def get_first_reference_prod(self) -> Product:
+    def _manage_mosaics(
+        self,
+        pivot_paths: Union[list, str, Path, CloudPath],
+        child_paths: Union[list, str, Path, CloudPath] = None,
+        output_path: Union[str, Path, CloudPath] = None,
+        remove_tmp: bool = True,
+        contiguity_check: GeometryCheck = GeometryCheck.EXTENT,
+        overlap_check: GeometryCheck = GeometryCheck.EXTENT,
+    ) -> None:
         """
-        Get first reference product, that should be coherent with all others
-
-        Returns:
-            Product: First reference product
-        """
-        return list(self.reference_prods.values())[0]
-
-    def homogeneous_attribute(self, attr: str) -> bool:
-        """
-        Check if the given attribute is the same for all products constituting the pairs.
-
-        Args:
-            attr (str): Attribute to be cecked. Must be available in EOReader's Product
-
-        Returns:
-            bool: True if this attribute is the same for all products constituting the pairs.
-        """
-        ref_attr = getattr(self.get_first_reference_prod(), attr)
-
-        return all(
-            ref_attr == getattr(child, attr) for child in self.child_prods.values()
-        )
-
-    def homogeneous_method(self, attr: str) -> bool:
-        """
-        Check if the given method (with empty arguments) is the same for all products constituting the pairs.
-
-        Args:
-            attr (str): Method to be cecked. Must be available in EOReader's Product
-
-        Returns:
-            bool: True if this method is the same for all products constituting the pairs.
-        """
-        ref_method = getattr(self.get_first_reference_prod(), attr)()
-
-        return all(
-            ref_method == getattr(child, attr)() for child in self.child_prods.values()
-        )
-
-    def check_reference_compatibility(self) -> None:
-        """
-        Check if the reference products are coherent between each other, in order to create a coherent reference product
+        Check if the pivot and child mosaics are overlapping
 
         TODO: same constellation ? same CRS ?...
 
         If not, throws a IncompatibleProducts error.
 
         Raises:
-            IncompatibleProducts: Products are incompatible and therefore pairs cannot be created.
+            IncompatibleProducts: Incompatible products if not contiguous or not the same date
         """
-        # Check contiguous
+        # Manage reference product
+        self.pivot_mosaic: Mosaic = Mosaic(
+            pivot_paths,
+            output_path=output_path,
+            remove_tmp=remove_tmp,
+            contiguity_check=contiguity_check,
+        )
+        self.pivot_id: str = self.pivot_mosaic.id
 
-        # Check date ? necessary ?
-        pass
+        # Information regarding the pair composition
+        self.has_child: bool = len(child_paths) > 0
 
-    def check_child_compatibility(self) -> None:
-        """
-        Check if the products are coherent between each other, in order to create pairs
-        If not, throws a IncompatibleProducts error.
+        if self.has_child:
+            self.child_mosaic: Mosaic = Mosaic(
+                child_paths,
+                output_path=output_path,
+                remove_tmp=remove_tmp,
+                contiguity_check=contiguity_check,
+            )
+            self.child_id: str = self.child_mosaic.id
 
-        Raises:
-            IncompatibleProducts: Products are incompatible and therefore pairs cannot be created.
-        """
-        # Check overlap
+            # Make the checks
+            # CRS
+            if self.pivot_mosaic.crs() != self.pivot_mosaic.crs():
+                raise IncompatibleProducts(
+                    f"Pivot and child mosaics should have the same CRS! {self.pivot_mosaic.crs()=} != {self.pivot_mosaic.crs()=}"
+                )
 
-        # Check...
-        pass
+            # Geometry
+            if overlap_check != GeometryCheck.NONE:
+                pivot_geom: gpd.GeoDataFrame = getattr(
+                    self.pivot_mosaic, str(overlap_check.value)
+                )()
+                child_geom: gpd.GeoDataFrame = getattr(
+                    self.child_mosaic, str(overlap_check.value)
+                )()
+                if not pivot_geom.overlaps(child_geom).all():
+                    raise IncompatibleProducts(
+                        "Pivot and child mosaics should overlap!"
+                    )
 
-    def get_reference_mtd(self):
+    def read_mtd(self):
         """"""
+        # TODO: how ? Just return the fields that are shared between mosaic's components ? Or create a XML from scratch ?
         raise NotImplementedError
 
-    def overlapping_footprint(self) -> gpd.GeoDataFrame:
+    def footprint(self) -> gpd.GeoDataFrame:
         """
-        Get the footprint of the overlapping area between every product of the pairs.
+        Get the footprint of the pair, i.e. the intersection between pivot and child footprints.
 
         Returns:
-            gpd.GeoDataFrame: Footprint of the overlapping area
+            gpd.GeoDataFrame: Footprint of the mosaic
         """
-        overlapping_footprint: gpd.GeoDataFrame = self.ref_prod.footprint()
-        for prod in self.child_prods.values():
-            overlapping_footprint = overlapping_footprint.overlay(
-                prod.footprint().to_crs(self.ref_prod.crs())
-            )
+        pivot_geom: gpd.GeoDataFrame = self.pivot_mosaic.footprint()
+        child_geom: gpd.GeoDataFrame = self.child_mosaic.footprint()
+        footprint = pivot_geom.overlay(child_geom, "intersection")
+        return footprint
 
-        return overlapping_footprint
-
-    def overlapping_extent(self) -> gpd.GeoDataFrame:
+    def extent(self) -> gpd.GeoDataFrame:
         """
-        Get the extent of the overlapping area between every product of the pairs.
+        Get the extent of the pair, i.e. the intersection between pivot and child extents.
 
         Returns:
-            gpd.GeoDataFrame: Extent of the overlapping area
+            gpd.GeoDataFrame: Extent of the mosaic
 
         """
-        overlapping_extent: gpd.GeoDataFrame = self.ref_prod.extent()
-        for prod in self.child_prods.values():
-            overlapping_extent = overlapping_extent.overlay(
-                prod.extent().to_crs(self.ref_prod.crs())
-            )
+        pivot_geom: gpd.GeoDataFrame = self.pivot_mosaic.extent()
+        child_geom: gpd.GeoDataFrame = self.child_mosaic.extent()
+        extent = pivot_geom.overlay(child_geom, "intersection")
+        return extent
 
-        return overlapping_extent
-
-    def load(self) -> bool:
+    def load(
+        self,
+        pivot_bands: Union[list, BandNames, str],
+        child_bands: Union[list, BandNames, str],
+        diff_bands: Union[list, BandNames, str],
+        pixel_size: float = None,
+        diff_method: DiffMethod = DiffMethod.PRE_POST,  # TODO: check that (dnbr = pre - post, idem ndvi)
+        **kwargs,
+    ) -> (dict, dict, dict):
         """"""
-        # TODO
-        pass
+        pivot_dict = {}
+        child_dict = {}
+        diff_dict = {}
 
-    def stack(self) -> bool:
-        """"""
+        # Convert just in case
+        pivot_bands = to_band(pivot_bands)
+        child_bands = to_band(child_bands)
+        diff_bands = to_band(diff_bands)
+
+        # Load bands
+
+        # out = pair.load(pre_bands=[NBR, ...], post_bands=[NDVI, ...], diff_bands=[NBR, ...])
+        # out: (out_pre, out_post, out_diff)
+        # >>> out_pre:{NBR: nbr_arr_from_pre_over_pair_footprint}
+        # >>> out_post: {NDVI: nbr_arr_from_pos_over_pair_footprint}
+        # >>> out_diff: {NBR: dnbr_arr}
+
         # TODO
-        pass
+
+        # TODO: mange difference automatically
+
+        return diff_dict, pivot_dict, child_dict
+
+    def _update_attrs(self, xarr: xr.DataArray, bands: list, **kwargs) -> xr.DataArray:
+        """
+        Update attributes of the given array
+        Args:
+            xarr (xr.DataArray): Array whose attributes need an update
+            bands (list): Bands
+        Returns:
+            xr.DataArray: Updated array
+        """
+        # Clean attributes, we don't want to pollute our attributes by default ones (not deterministic)
+        # Are we sure of that ?
+        xarr.attrs = {}
+
+        if not isinstance(bands, list):
+            bands = [bands]
+        long_name = to_str(bands)
+        xr_name = "_".join(long_name)
+        attr_name = " ".join(long_name)
+
+        xarr = xarr.rename(xr_name)
+        xarr.attrs["long_name"] = attr_name
+        xarr.attrs["condensed_name"] = self.condensed_name
+
+        # TODO: complete that
+
+        return xarr
