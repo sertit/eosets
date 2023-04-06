@@ -2,12 +2,11 @@
 import logging
 import os
 import shutil
-import tempfile
 from collections import defaultdict
 from enum import unique
 from glob import glob
 from pathlib import Path
-from typing import Any, Tuple, Union
+from typing import Any, Union
 
 import geopandas as gpd
 import xarray as xr
@@ -17,11 +16,11 @@ from eoreader.bands import BandNames, is_spectral_band, to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
-from sertit import files, rasters
+from sertit import rasters
 from sertit.misc import ListEnum
 
-from eosets.env_vars import CI_EOSETS_BAND_FOLDER
 from eosets.exceptions import IncompatibleProducts
+from eosets.set import Set
 from eosets.utils import EOPAIRS_NAME, AnyPathType
 
 READER = Reader()
@@ -46,7 +45,7 @@ class MosaicMethod(ListEnum):
     VRT = "merge_vrt"
 
 
-class Mosaic:
+class Mosaic(Set):
     """Class of mosaic, composed by several contiguous EOReader's products acquired the same day"""
 
     def __init__(
@@ -59,77 +58,34 @@ class Mosaic:
         mosaic_method: Union[MosaicMethod, str] = MosaicMethod.VRT,
         **kwargs,
     ):
-        # Manage output
-        # TODO : create a temp folder for the pairs ?
         """Output path of the pairs."""
 
-        # Remove temporary files
-        self._tmp_output = None
-        self._output = None
-        self._remove_tmp = remove_tmp
-        """ Remove temporary files, propagated to EOReader's Products. """
-
-        # Manage output path
-        if output_path:
-            self._tmp_output = None
-            self._output = AnyPath(output_path)
-        else:
-            self._tmp_output = tempfile.TemporaryDirectory()
-            self._output = AnyPath(self._tmp_output.name)
-
-        self._tmp_process = self.output.joinpath("tmp_mosaic")
-        os.makedirs(self._tmp_process, exist_ok=True)
+        super().__init__(paths, output_path, id, remove_tmp, **kwargs)
 
         # Manage reference product
         self.prods: dict = {}
         """ Products (contiguous and acquired the same day). """
 
-        self.id: str = id
-        """ ID of the reference product, given by the creator of the mosaic. If not, a mix based on the dates and constellations of its components. """
-
         self.nof_prods: int = 0
         """ Number of products. """
-
-        # -- Other parameters --
-        # Full name
-        self.full_name: str = ""
-        """ Mosaic full name. """
-
-        # Condensed name
-        self.condensed_name = ""
-        """ Mosaic condensed name, a mix based on the dates and constellations of the components of the mosaic. """
 
         # We need the date in _manage_prods
         self.date = None
         """ Date of the mosaic. If not provided in kwargs, using the first product's date. """
 
+        self.mosaic_method = MosaicMethod.convert_from(mosaic_method)[0]
+        """ Mosaicing method. If GTIFF is specified, the temporary files from every products will be removed, if VRT is spoecified, they will not."""
+
         contiguity_check = ContiguityCheck.convert_from(contiguity_check)[0]
         self._manage_prods(paths, contiguity_check, **kwargs)
 
-        # Nodata (by default use EOReader's)
-
-        # Nodata (by default use EOReader's)
+        # Fill attributes
         self.nodata = self.get_attr("nodata", **kwargs)
-        """ Nodata of the mosaic. If not provided in kwargs, using the first product's nodata. """
-
-        # Resolution (by default use EOReader's)
         self.resolution = self.get_attr("resolution", **kwargs)
-        """ Resolution of the mosaic. If not provided in kwargs, using the first product's resolution. """
-
         self.crs = self.get_attr("crs", **kwargs)
-        """ CRS of the mosaic. If not provided in kwargs, using the first product's crs. """
-
         self.same_constellation: bool = self.is_homogeneous("constellation")
-        """ Is the mosaic constituted of the same constellation? """
-
         self.same_crs: bool = self.is_homogeneous("crs")
-        """ Is the mosaic constituted of the same sensor type? """
-
         self.constellations = list(set(prod.constellation for prod in self.get_prods()))
-        """ List of unique constellations constituting the pairs """
-
-        self.mosaic_method = MosaicMethod.convert_from(mosaic_method)[0]
-        """ Mosaicing method. If GTIFF is specified, the temporary files from every products will be removed, if VRT is spoecified, they will not."""
 
     def clean_tmp(self):
         """
@@ -146,100 +102,12 @@ class Mosaic:
         for prod in self.get_prods():
             prod.clear()
 
-    def __del__(self):
-        """Cleaning up _tmp directory"""
-        self.clear()
-
-        # -- Remove temp folders
-        if self._tmp_output:
-            self._tmp_output.cleanup()
-
-        elif self._remove_tmp:
-            files.remove(self._tmp_process)
-            self.clean_tmp()
-
-    @property
-    def output(self) -> AnyPathType:
+    def _manage_output(self):
         """
-        Output directory of the mosaic
-
-        Returns:
-            AnyPathType: Output path ofthe mosaic
+        Manage the output specifically for this child class
         """
-        return self._output
-
-    @output.setter
-    def output(self, value: Union[str, AnyPathType]) -> None:
-        """
-        Output directory of the mosaic
-
-        Args:
-            value (Union[str, AnyPathType]): Output path ofthe mosaic
-        """
-        # Set the new output
-        self._output = AnyPath(value)
-        if not isinstance(self._output, CloudPath):
-            self._output = self._output.resolve()
-
-        # Create temporary process folder
-        old_tmp_process = self._tmp_process
-        self._tmp_process = self._output.joinpath(f"tmp_{self.condensed_name}")
-        os.makedirs(self._tmp_process, exist_ok=True)
-
-        # Update for prods
         for prod in self.get_prods():
             prod.output = self._get_tmp_folder(writable=True)
-
-        # Move all files from old process folder into the new one
-        for file in files.listdir_abspath(old_tmp_process):
-            try:
-                shutil.move(str(file), self._tmp_process)
-            except shutil.Error:
-                # Don't overwrite file
-                pass
-
-        # Remove old output if existing into the new output
-        if self._tmp_output:
-            self._tmp_output.cleanup()
-            self._tmp_output = None
-
-    def _get_tmp_folder(self, writable: bool = False) -> AnyPathType:
-        """
-        Manage the case of CI bands
-
-        Returns:
-            AnyPathType : Band folder
-        """
-        tmp_folder = self._tmp_process
-
-        # Manage CI bands (when we do not write anything, read only)
-        if not writable:
-            ci_tmp_folder = os.environ.get(CI_EOSETS_BAND_FOLDER)
-            if ci_tmp_folder:
-                ci_tmp_folder = AnyPath(ci_tmp_folder)
-                if ci_tmp_folder.is_dir():
-                    # If we need a writable directory, check it
-                    tmp_folder = ci_tmp_folder
-
-        return tmp_folder
-
-    def _get_out_path(self, filename: str) -> Tuple[AnyPathType, bool]:
-        """
-        Returns the output path of a file to be written, depending on if it already exists or not (manages CI folders)
-
-        Args:
-            filename (str): Filename
-
-        Returns:
-            Tuple[AnyPathType , bool]: Output path and if the file already exists or not
-        """
-        out = self._get_tmp_folder() / filename
-        exists = True
-        if not out.exists():
-            exists = False
-            out = self._get_tmp_folder(writable=True) / filename
-
-        return out, exists
 
     def _manage_prods(
         self,
@@ -631,6 +499,13 @@ class Mosaic:
         Returns:
             xr.DataArray: Stack as a DataArray
         """
+        if stack_path:
+            stack_path = AnyPath(stack_path)
+            if stack_path.is_file():
+                return utils.read(stack_path, resolution=resolution)
+            else:
+                os.makedirs(str(stack_path.parent), exist_ok=True)
+
         # Create the analysis stack
         band_dict = self.load(bands, resolution=resolution, **kwargs)
 
@@ -645,12 +520,8 @@ class Mosaic:
         stack = self._update_attrs(stack, bands, **kwargs)
 
         # Write on disk
-        LOGGER.debug("Saving stack")
         if stack_path:
-            stack_path = AnyPath(stack_path)
-            if not stack_path.parent.exists():
-                os.makedirs(str(stack_path.parent), exist_ok=True)
-
+            LOGGER.debug("Saving stack")
             utils.write(stack, stack_path, dtype=dtype, **kwargs)
 
         return stack

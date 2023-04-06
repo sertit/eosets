@@ -13,15 +13,19 @@ from eosets.mosaic import Mosaic
 
 ci.reduce_verbosity()
 
+ON_DISK = False
+
 
 def test_s2_mosaic():
     dem_sub_dir_path = ["GLOBAL", "COPDEM_30m", "COPDEM_30m.vrt"]
     os.environ[DEM_PATH] = str(get_db_dir().joinpath(*dem_sub_dir_path))
 
-    mosaic_path = data_path()
-    # from cloudpathlib import AnyPath
-    # mosaic_path = AnyPath("D:\_EXTRACTEO\DS3\CI\eosets\MOSAIC")
+    if ON_DISK:
+        from cloudpathlib import AnyPath
 
+        mosaic_path = AnyPath("D:\_EXTRACTEO\DS3\CI\eosets\MOSAIC")
+    else:
+        mosaic_path = data_path() / "MOSAIC"
     # Get some Sentinel-2 paths
     s2_32umu = (
         mosaic_path
@@ -37,7 +41,8 @@ def test_s2_mosaic():
     )
 
     with tempfile.TemporaryDirectory() as output:
-        # output = AnyPath(r"D:\_EXTRACTEO\OUTPUT\eosets\Mosaic")
+        if ON_DISK:
+            output = r"D:\_EXTRACTEO\OUTPUT\eosets\Mosaic"
 
         # First try with incompatible products
         with pytest.raises(IncompatibleProducts):
@@ -47,7 +52,7 @@ def test_s2_mosaic():
 
         # Then with compatible
         mosaic = Mosaic([s2_32ulv, s2_32ulu], mosaic_method="VRT")
-        mosaic.output = output / mosaic.condensed_name
+        mosaic.output = os.path.join(output, mosaic.condensed_name)
 
         # Stack with a resolution of 60m
         mosaic.stack(
