@@ -4,13 +4,22 @@
 # EOSets API
 
 ```{eval-rst}
+.. toctree::
+   :maxdepth: 1
+   :caption: Tutorials
+   :hidden:
+
+   notebooks/mosaic
+```
+
+```{eval-rst}
 .. autosummary::
    :toctree: api
    :caption: EOSets API
    :template: custom-module-template.rst
    :recursive:
    
-   eopairs
+   eosets
 ```
 
 ```{eval-rst}

@@ -68,11 +68,11 @@ templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-#
-# source_suffix = {
-#     '.rst': 'restructuredtext',
-#     '.md': 'markdown',
-# }
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.ipynb': 'myst-nb',
+    '.myst': 'myst-nb',
+}
 
 # The master toctree document.
 master_doc = "index"
@@ -98,7 +98,7 @@ today_fmt = "%Y-%m-%d"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -108,7 +108,6 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
     "__init__.py",
-    "eosets/data/*"
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -126,13 +125,10 @@ html_theme = "sphinx_book_theme"
 # documentation.
 html_theme_options = {
     "repository_url": eosets.__url__,
-    "use_repository_button": True,
-    "use_issues_button": True,
-    "use_edit_page_button": False,
     "repository_branch": "master",
     "path_to_docs": "docs",
-    "use_download_button": False,
-    "extra_navbar": "",
+
+    "repository_provider": "custom"
 }
 
 html_logo = "_static/eosets.png"
@@ -237,11 +233,11 @@ def my_doc_skip(app, what, name, obj, skip, options):
     # Skip these docstrings
     private = name.startswith("_") and name != "__init__"
     ghosted_fct = what == "function" and name in [
-        "cache",
-        "cached_property",
+        # "cache",
+        # "cached_property",
     ]
     ghosted_module = what == "module" and name in [
-        "data"
+        # "data"
     ]
     ghosted = ghosted_fct or ghosted_module
 
