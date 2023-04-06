@@ -21,11 +21,11 @@ from sertit.misc import ListEnum
 
 from eosets.exceptions import IncompatibleProducts
 from eosets.set import Set
-from eosets.utils import EOPAIRS_NAME, AnyPathType
+from eosets.utils import EOSETS_NAME, AnyPathType
 
 READER = Reader()
 
-LOGGER = logging.getLogger(EOPAIRS_NAME)
+LOGGER = logging.getLogger(EOSETS_NAME)
 
 
 @unique

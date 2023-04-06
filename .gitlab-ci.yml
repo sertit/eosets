@@ -8,7 +8,7 @@ stages:
 variables:
   EEO_DEPS: $REGISTRY_GITLAB/extracteo/extracteo_deps
   EO_CONTAINER: $REGISTRY_GITLAB/eo-containers/python
-  EOREADER_CHANGES: eosets/**/[^_]*.{py,xml}
+  EOSETS_CHANGES: eosets/**/[^_]*.{py,xml}
 
 lint:
   image: python:3.9-buster

@@ -1,13 +1,13 @@
-""" EOPairs exceptions """
+""" EOSets exceptions """
 
 
-class EOPairsProducts(Exception):
-    """EOPairs error"""
+class EOSetsError(Exception):
+    """EOSets base error"""
 
     pass
 
 
-class IncompatibleProducts(EOPairsProducts):
+class IncompatibleProducts(EOSetsError):
     """Incompatible Products for some reason (non overlapping...)"""
 
     pass

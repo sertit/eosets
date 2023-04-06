@@ -156,7 +156,7 @@ html_last_updated_fmt = today_fmt
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "eopairsdoc"
+htmlhelp_basename = "eosetsdoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -182,7 +182,7 @@ latex_documents = [
     (
         master_doc,
         "eosets.tex",
-        "EOPairs Documentation",
+        "EOSets Documentation",
         "ICube-SERTIT",
         "manual",
     )
@@ -192,7 +192,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "eosets", "EOPairs Documentation", [author], 1)]
+man_pages = [(master_doc, "eosets", "EOSets Documentation", [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -203,7 +203,7 @@ texinfo_documents = [
     (
         master_doc,
         "eosets",
-        "EOPairs Documentation",
+        "EOSets Documentation",
         author,
         "eosets",
         "One line description of project.",

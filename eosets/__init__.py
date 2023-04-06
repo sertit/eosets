@@ -1,5 +1,5 @@
 """
-**EOPairs** library
+**EOSets** library
 """
 # flake8: noqa
 from .__meta__ import (

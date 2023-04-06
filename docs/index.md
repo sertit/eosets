@@ -1,12 +1,12 @@
 ```{include} ../README.md
 ```
 
-# EOPairs API
+# EOSets API
 
 ```{eval-rst}
 .. autosummary::
    :toctree: api
-   :caption: EOPairs API
+   :caption: EOSets API
    :template: custom-module-template.rst
    :recursive:
    
@@ -20,6 +20,6 @@
    :hidden:
 
    history
-   GitLab Repository <https://git.unistra.fr/sertit/libraries/eopairs>
+   GitLab Repository <https://git.unistra.fr/sertit/libraries/eosets>
 ```
 

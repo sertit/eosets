@@ -6,9 +6,9 @@ from cloudpathlib import AnyPath
 from eoreader.reader import Reader
 from sertit import ci
 
-from eosets.utils import EOPAIRS_NAME, AnyPathType
+from eosets.utils import EOSETS_NAME, AnyPathType
 
-LOGGER = logging.getLogger(EOPAIRS_NAME)
+LOGGER = logging.getLogger(EOSETS_NAME)
 READER = Reader()
 
 CI_EOSETS_S3 = "CI_EOSETS_USE_S3"

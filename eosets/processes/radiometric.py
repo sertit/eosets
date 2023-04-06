@@ -12,9 +12,9 @@ from sertit.misc import ListEnum
 from sertit.rasters import MAX_CORES
 
 from eosets.multi_pairs import MultiPairs
-from eosets.utils import EOPAIRS_NAME, AnyPathType
+from eosets.utils import EOSETS_NAME, AnyPathType
 
-LOGGER = logging.getLogger(EOPAIRS_NAME)
+LOGGER = logging.getLogger(EOSETS_NAME)
 
 
 @unique
