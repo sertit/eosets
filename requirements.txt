@@ -13,4 +13,5 @@ tempenv
 twine
 
 # Libs for all platforms
-eoreader>=0.20.0
+# eoreader>=0.20.0
+git+https://github.com/sertit/eoreader@0.20.0
