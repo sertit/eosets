@@ -30,6 +30,7 @@ pytest_s3:
   before_script:
     - python -m pip install --upgrade pip
     - pip install --ignore-installed PyYAML
+    - pip install -r requirements.txt
     - pip install -e .
   script:
     - pytest -v --durations=0 --cov-report term --cov-report html:${CI_PROJECT_DIR}/cov_s3.html --cov=eosets --cov-config=.coveragerc CI --log-cli-level DEBUG --capture=tee-sys
