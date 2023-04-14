@@ -10,6 +10,7 @@
    :hidden:
 
    notebooks/mosaic
+   notebooks/pair
 ```
 
 ```{eval-rst}

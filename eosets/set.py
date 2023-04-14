@@ -97,7 +97,7 @@ class Set:
         self.constellations = None
         """ List of unique constellations constituting the set """
 
-        self.nof_prods: int = len(self.get_prods())
+        self.nof_prods: int = 0
         """ Number of products. """
 
     @abstractmethod

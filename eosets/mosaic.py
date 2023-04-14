@@ -11,7 +11,7 @@ from typing import Union
 import geopandas as gpd
 import xarray as xr
 from cloudpathlib import AnyPath, CloudPath
-from eoreader import utils
+from eoreader import cache, utils
 from eoreader.bands import BandNames, is_spectral_band, to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
@@ -49,8 +49,6 @@ class Mosaic(Set):
         mosaic_method: Union[MosaicMethod, str] = MosaicMethod.VRT,
         **kwargs,
     ):
-        super().__init__(output_path, id, remove_tmp, **kwargs)
-
         # Manage reference product
         self.prods: dict = {}
         """ Products (contiguous and acquired the same day). """
@@ -63,6 +61,17 @@ class Mosaic(Set):
         """ Mosaicing method. If GTIFF is specified, the temporary files from every products will be removed, if VRT is spoecified, they will not."""
 
         contiguity_check = GeometryCheck.convert_from(contiguity_check)[0]
+
+        # Init the base class
+        super().__init__(
+            output_path,
+            id,
+            remove_tmp,
+            paths=paths,
+            contiguity_check=contiguity_check,
+            **kwargs,
+        )
+        # Update products of the mosaic
         self._manage_prods(paths, contiguity_check, **kwargs)
 
         # Fill attributes
@@ -144,7 +153,7 @@ class Mosaic(Set):
         self.check_contiguity(contiguity_check)
 
         # Create full_name
-        self.nof_prods = len(self.prods)
+        self.nof_prods = len(self.get_prods())
         self.date = first_prod.date.date()
         self.full_name = (
             f"{'-'.join([prod.condensed_name for prod in self.get_prods()])}"
@@ -239,6 +248,7 @@ class Mosaic(Set):
         # TODO: how ? Just return the fields that are shared between mosaic's components ? Or create a XML from scratch ?
         raise NotImplementedError
 
+    @cache
     def footprint(self) -> gpd.GeoDataFrame:
         """
         Get the footprint of the mosaic.
@@ -258,6 +268,7 @@ class Mosaic(Set):
 
         return footprint
 
+    @cache
     def extent(self) -> gpd.GeoDataFrame:
         """
         Get the extent of the mosaic.

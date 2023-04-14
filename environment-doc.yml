@@ -1,0 +1,10 @@
+name: eosets-doc
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - cartopy
+  - jupyter
+  - pip
+  - pip:
+      - -r requirements.txt
