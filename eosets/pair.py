@@ -71,10 +71,11 @@ class Pair(Set):
 
         # Update mosaics of the pair
         self._manage_mosaics(pivot_paths, child_paths, contiguity_check, overlap_check)
+
         # Fill attributes
         self.full_name = f"{self.pivot_id}_{self.child_id}"
         self.condensed_name = self.full_name
-        # TODO (how to name pairs ???)
+        # TODO (how to name pair ???)
 
         self.nodata = self.get_attr("nodata", **kwargs)
         self.pixel_size = self.get_attr("pixel_size", **kwargs)
