@@ -15,4 +15,4 @@ twine
 # Libs for all platforms
 # eoreader>=0.20.0
 git+https://github.com/sertit/eoreader@0.20.0
-git+https://github.com/sertit/sertit-utils
+sertit[full] >= 1.26.0
