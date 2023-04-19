@@ -28,7 +28,7 @@ class DiffMethod(ListEnum):
 
 
 class Pair(Set):
-    """Class of multiple pairs"""
+    """Class of two-products pair"""
 
     def __init__(
         self,
@@ -66,10 +66,6 @@ class Pair(Set):
             output_path,
             id,
             remove_tmp,
-            pivot_paths=pivot_paths,
-            child_paths=child_paths,
-            contiguity_check=contiguity_check,
-            overlap_check=overlap_check,
             **kwargs,
         )
 
@@ -97,7 +93,7 @@ class Pair(Set):
         """
         Clear this product's cache
         """
-        # -- Delete all cached properties and functions
+        # Delete all cached properties and functions
         self.pivot_mosaic.clear()
         self.child_mosaic.clear()
 

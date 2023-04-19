@@ -67,8 +67,6 @@ class Mosaic(Set):
             output_path,
             id,
             remove_tmp,
-            paths=paths,
-            contiguity_check=contiguity_check,
             **kwargs,
         )
         # Update products of the mosaic
@@ -93,7 +91,7 @@ class Mosaic(Set):
         """
         Clear this product's cache
         """
-        # -- Delete all cached properties and functions
+        # Delete all cached properties and functions
         for prod in self.get_prods():
             prod.clear()
 
