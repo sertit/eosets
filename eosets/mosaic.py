@@ -287,30 +287,26 @@ class Mosaic(Set):
 
         return extent
 
+    def get_band_suffix(self):
+        return f"{self.mosaic_method.name.lower()}"
+
     def load(
         self,
         bands: Union[list, BandNames, str],
         pixel_size: float = None,
         **kwargs,
-    ) -> dict:
+    ) -> xr.Dataset:
         """"""
         # Get merge function and extension
         merge_fct = getattr(rasters, self.mosaic_method.value)
-        out_suffix = f"{self.mosaic_method.name.lower()}"
 
         # Convert just in case
         bands = to_band(bands)
 
         # Get the bands to be loaded
-        band_paths = {}
-        bands_to_load = []
-        for band in bands:
-            band_path, exists = self._get_out_path(
-                f"{self.id}_{to_str(band)[0]}.{out_suffix}"
-            )
-            band_paths[band] = band_path
-            if not exists:
-                bands_to_load.append(band)
+        bands_to_load, bands_path = self.get_bands_to_load(
+            bands, self.get_band_suffix()
+        )
 
         # Check validity of the bands
         for prod in self.get_prods():
@@ -344,8 +340,8 @@ class Mosaic(Set):
 
         # Merge
         merged_dict = {}
-        for band in band_paths:
-            output_path = band_paths[band]
+        for band in bands_path:
+            output_path = bands_path[band]
             if not output_path.is_file():
                 LOGGER.debug(f"Merging bands {to_str(band)[0]}")
                 if self.mosaic_method == MosaicMethod.VRT:
@@ -368,7 +364,13 @@ class Mosaic(Set):
         LOGGER.debug("Collocating bands")
         merged_dict = self._collocate_bands(merged_dict)
 
-        return merged_dict
+        # Create a dataset (only after collocation)
+        coords = None
+        if merged_dict:
+            coords = merged_dict[bands[0]].coords
+
+        # Make sure the dataset has the bands in the right order -> re-order the input dict
+        return xr.Dataset({key: merged_dict[key] for key in bands}, coords=coords)
 
     def stack(
         self,
@@ -418,43 +420,32 @@ class Mosaic(Set):
 
         return stack
 
-    def _collocate_bands(self, bands: dict, master_xds: xr.DataArray = None) -> dict:
+    def _collocate_bands(self, bands: dict, reference: xr.DataArray = None) -> dict:
         """
-        Collocate all bands from a dict if needed (if a raster shape is different)
+        Collocate all bands from a dict
 
         Args:
             bands (dict): Dict of bands to collocate if needed
-            master_xds (xr.DataArray): Master array
+            reference (xr.DataArray): Reference array
 
         Returns:
             dict: Collocated bands
         """
-        return self.get_first_prod()._collocate_bands(bands, master_xds)
+        return self.get_first_prod()._collocate_bands(bands, reference)
 
-    def _update_attrs(self, xarr: xr.DataArray, bands: list, **kwargs) -> xr.DataArray:
+    def _update_attrs_constellation_specific(
+        self, xarr: xr.DataArray, bands: list, **kwargs
+    ) -> xr.DataArray:
         """
-        Update attributes of the given array
+        Update attributes of the given array (constellation specific)
+
         Args:
             xarr (xr.DataArray): Array whose attributes need an update
-            bands (list): Bands
+            bands (list): Array name (as a str or a list)
+
         Returns:
-            xr.DataArray: Updated array
+            xr.DataArray: Updated array/dataset
         """
-        # Clean attributes, we don't want to pollute our attributes by default ones (not deterministic)
-        # Are we sure of that ?
-        xarr.attrs = {}
-
-        if not isinstance(bands, list):
-            bands = [bands]
-        long_name = to_str(bands)
-        xr_name = "_".join(long_name)
-        attr_name = " ".join(long_name)
-
-        xarr = xarr.rename(xr_name)
-        xarr.attrs["long_name"] = attr_name
         xarr.attrs["acquisition_date"] = self.date
-        xarr.attrs["condensed_name"] = self.condensed_name
-
-        # TODO: complete that
 
         return xarr

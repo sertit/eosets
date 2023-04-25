@@ -12,6 +12,7 @@ from eoreader.reader import Reader
 from rasterio.enums import Resampling
 from sertit.misc import ListEnum
 
+from eosets import utils
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 from eosets.set import GeometryCheck, Set
@@ -221,15 +222,11 @@ class Pair(Set):
         diff_method: DiffMethod = DiffMethod.PIVOT_CHILD,
         resampling: Resampling = Resampling.bilinear,
         **kwargs,
-    ) -> (dict, dict, dict):
+    ) -> (xr.Dataset, xr.Dataset, xr.Dataset):
         """"""
         assert any(
             [pivot_bands is not None, child_bands is not None, diff_bands is not None]
         )
-
-        pivot_dict = {}
-        child_dict = {}
-        diff_dict = {}
 
         # Convert just in case
         if pivot_bands is None:
@@ -243,10 +240,13 @@ class Pair(Set):
         child_bands = to_band(child_bands)
         diff_bands = to_band(diff_bands)
 
+        # Check existing diff paths
+        diff_bands_to_load, diff_bands_path = self.get_bands_to_load(diff_bands)
+
         # Overload pivot and child bands with diff bands
         pivot_bands_to_load = pivot_bands.copy()
         child_bands_to_load = child_bands.copy()
-        for band in diff_bands:
+        for band in diff_bands_to_load:
             if band not in pivot_bands:
                 pivot_bands_to_load.append(band)
             if band not in child_bands:
@@ -256,13 +256,13 @@ class Pair(Set):
         window = kwargs.pop("window", self.footprint())
 
         # Load pivot bands
-        pivot_dict = self.pivot_mosaic.load(
+        pivot_ds: xr.Dataset = self.pivot_mosaic.load(
             pivot_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
         )
         # TODO: crop to footprint ?
 
         # Load pivot bands
-        child_dict = self.child_mosaic.load(
+        child_ds: xr.Dataset = self.child_mosaic.load(
             child_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
         )
         # TODO: crop to footprint ?
@@ -270,69 +270,104 @@ class Pair(Set):
         # Load pivot bands
         diff_dict = {}
         for band in diff_bands:
-            pivot_arr = pivot_dict[band]
-            child_arr = child_dict[band]
-            if pivot_arr.shape != child_arr.shape:
+            diff_path, exists = self._get_out_path(f"{self.id}_{to_str(band)[0]}.tif")
+            if exists:
+                diff_arr = utils.read(
+                    path=diff_bands_path[band],
+                    pixel_size=pixel_size,
+                    resampling=resampling,
+                    **kwargs,
+                )
+            else:
+                pivot_arr = pivot_ds[band]
+                child_arr = child_ds[band]
+
+                # To be sure, always collocate arrays, even if the size is the same
+                # Indeed, a small difference in the coordinates will lead to empy arrays
+                # So the bands MUST BE exactly aligned
                 child_arr = child_arr.rio.reproject_match(
                     pivot_arr, resampling=resampling, **kwargs
                 )
 
-            # Nans are conserved with +/-
-            # So only the overlapping footprint is loaded
-            """
-            a = xr.DataArray(np.ones([2, 2]))
-            a[0, 0] = np.nan
-            b = xr.DataArray(2*np.ones([2, 2]))
-            b[1, 0] = np.nan
-            a + b
-                <xarray.DataArray (dim_0: 2, dim_1: 2)>
-                array([[nan,  3.],
-                       [nan,  3.]])
-            a - b
-                <xarray.DataArray (dim_0: 2, dim_1: 2)>
-                array([[nan, -1.],
-                       [nan, -1.]])
-            """
-            if diff_method == DiffMethod.PIVOT_CHILD:
-                diff_arr = pivot_arr - child_arr
-            else:
-                diff_arr = child_arr - pivot_arr
+                # Nans are conserved with +/-
+                # So only the overlapping footprint is loaded
+                """
+                a = xr.DataArray(np.ones([2, 2]))
+                    a[0, 0] = np.nan
+                b = xr.DataArray(2*np.ones([2, 2]))
+                    b[1, 0] = np.nan
+                a + b
+                    <xarray.DataArray (dim_0: 2, dim_1: 2)>
+                    array([[nan,  3.],
+                           [nan,  3.]])
+                a - b
+                    <xarray.DataArray (dim_0: 2, dim_1: 2)>
+                    array([[nan, -1.],
+                           [nan, -1.]])
+                """
+                if diff_method == DiffMethod.PIVOT_CHILD:
+                    diff_arr = pivot_arr - child_arr
+                else:
+                    diff_arr = child_arr - pivot_arr
 
-            # Save diff band
-            diff_name = f"d{to_str(band)[0]}"
-            diff_arr = pivot_arr.copy(data=diff_arr).rename(diff_name)
-            diff_arr.attrs["long_name"] = diff_name
+                # Save diff band
+                diff_name = f"d{to_str(band)[0]}"
+                diff_arr = pivot_arr.copy(data=diff_arr).rename(diff_name)
+                diff_arr.attrs["long_name"] = diff_name
+
+                # Write on disk
+                utils.write(diff_arr, diff_path)
+
             diff_dict[band] = diff_arr
 
-        return (
-            {band: pivot_dict[band] for band in pivot_bands},
-            {band: child_dict[band] for band in child_bands},
-            diff_dict,
+        # Drop not wanted bands from pivot and child datasets
+        pivot_ds = pivot_ds.drop_vars(
+            [band for band in pivot_ds.keys() if band not in pivot_bands]
+        )
+        child_ds = child_ds.drop_vars(
+            [band for band in child_ds.keys() if band not in child_bands]
         )
 
-    def _update_attrs(self, xarr: xr.DataArray, bands: list, **kwargs) -> xr.DataArray:
+        # Collocate diff bands
+        diff_dict = self._collocate_bands(diff_dict)
+
+        # Create diff dataset
+        coords = None
+        if diff_dict:
+            coords = diff_dict[diff_bands[0]].coords
+
+        # Make sure the dataset has the bands in the right order -> re-order the input dict
+        diff_ds = xr.Dataset({key: diff_dict[key] for key in diff_bands}, coords=coords)
+
+        return pivot_ds, child_ds, diff_ds
+
+    def _update_attrs_constellation_specific(
+        self, xarr: xr.DataArray, bands: list, **kwargs
+    ) -> xr.DataArray:
         """
-        Update attributes of the given array
+        Update attributes of the given array (constellation specific)
+
         Args:
             xarr (xr.DataArray): Array whose attributes need an update
-            bands (list): Bands
+            bands (list): Array name (as a str or a list)
+
         Returns:
-            xr.DataArray: Updated array
+            xr.DataArray: Updated array/dataset
         """
-        # Clean attributes, we don't want to pollute our attributes by default ones (not deterministic)
-        # Are we sure of that ?
-        xarr.attrs = {}
-
-        if not isinstance(bands, list):
-            bands = [bands]
-        long_name = to_str(bands)
-        xr_name = "_".join(long_name)
-        attr_name = " ".join(long_name)
-
-        xarr = xarr.rename(xr_name)
-        xarr.attrs["long_name"] = attr_name
-        xarr.attrs["condensed_name"] = self.condensed_name
-
         # TODO: complete that
-
         return xarr
+
+    # TODO: stack
+
+    def _collocate_bands(self, bands: dict, reference: xr.DataArray = None) -> dict:
+        """
+        Collocate all bands from a dict
+
+        Args:
+            bands (dict): Dict of bands to collocate if needed
+            reference (xr.DataArray): Reference array
+
+        Returns:
+            dict: Collocated bands
+        """
+        return self.pivot_mosaic._collocate_bands(bands, reference)

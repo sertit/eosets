@@ -9,7 +9,7 @@ from typing import Any, Tuple, Union
 import geopandas as gpd
 import xarray as xr
 from cloudpathlib import AnyPath, CloudPath
-from eoreader.bands import BandNames
+from eoreader.bands import BandNames, to_str
 from eoreader.products import Product
 from sertit import files
 from sertit.misc import ListEnum
@@ -136,20 +136,20 @@ class Set:
     @property
     def output(self) -> AnyPathType:
         """
-        Output directory of the mosaic
+        Output directory of the set
 
         Returns:
-            AnyPathType: Output path ofthe mosaic
+            AnyPathType: Output path of the set
         """
         return self._output
 
     @output.setter
     def output(self, value: Union[str, AnyPathType]) -> None:
         """
-        Output directory of the mosaic
+        Output directory of the set
 
         Args:
-            value (Union[str, AnyPathType]): Output path ofthe mosaic
+            value (Union[str, AnyPathType]): Output path of the set
         """
         # Set the new output
         self._output = AnyPath(value)
@@ -346,13 +346,78 @@ class Set:
 
         return all(prod.has_bands(bands) for prod in self.get_prods())
 
-    def _update_attrs(self, xarr: xr.DataArray, bands: list, **kwargs) -> xr.DataArray:
+    def _update_attrs(
+        self, xarr: Union[xr.DataArray, xr.Dataset], bands: list, **kwargs
+    ) -> Union[xr.DataArray, xr.Dataset]:
         """
         Update attributes of the given array
         Args:
-            xarr (xr.DataArray): Array whose attributes need an update
+            xarr (Union[xr.DataArray, xr.Dataset]): Array whose attributes need an update
             bands (list): Bands
         Returns:
-            xr.DataArray: Updated array
+            Union[xr.DataArray, xr.Dataset]: Updated dataarray/dataset
+        """
+        # Clean attributes, we don't want to pollute our attributes by default ones (not deterministic)
+        # Are we sure of that ?
+        xarr.attrs = {}
+
+        if not isinstance(bands, list):
+            bands = [bands]
+
+        long_name = to_str(bands)
+        xr_name = "_".join(long_name)
+        attr_name = " ".join(long_name)
+
+        xarr = xarr.rename(xr_name)
+        xarr.attrs["long_name"] = attr_name
+        xarr.attrs["condensed_name"] = self.condensed_name
+
+        # TODO: complete that
+        return self._update_attrs_constellation_specific(xarr, bands, **kwargs)
+
+    def _update_attrs_constellation_specific(
+        self, xarr: xr.DataArray, bands: list, **kwargs
+    ) -> xr.DataArray:
+        """
+        Update attributes of the given array (constellation specific)
+
+        Args:
+            xarr (xr.DataArray): Array whose attributes need an update
+            bands (list): Array name (as a str or a list)
+
+        Returns:
+            xr.DataArray: Updated array/dataset
         """
         raise NotImplementedError
+
+    def _update_xds_attrs(
+        self,
+        xds: xr.Dataset,
+        bands: Union[list, BandNames, str],
+        **kwargs,
+    ) -> xr.Dataset:
+        """ """
+        # Rename all bands and add attributes
+        for key, val in xds.items():
+            xds[key] = self._update_attrs(val, key, **kwargs)
+
+        # Update stack's attributes
+        if len(xds) > 0:
+            xds = self._update_attrs(xds, bands, **kwargs)
+
+        return xds
+
+    def get_bands_to_load(self, bands, out_suffix="tif") -> (list, dict):
+
+        # Get the bands to be loaded
+        bands_path = {}
+        bands_to_load = []
+        for band in bands:
+            band_path, exists = self._get_out_path(
+                f"{self.id}_{to_str(band)[0]}.{out_suffix}"
+            )
+            bands_path[band] = band_path
+            if not exists:
+                bands_to_load.append(band)
+
+        return bands_to_load, bands_path
