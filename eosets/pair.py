@@ -16,6 +16,7 @@ from eosets import utils
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 from eosets.set import GeometryCheck, Set
+from eosets.utils import AnyPathType
 
 READER = Reader
 
@@ -259,13 +260,11 @@ class Pair(Set):
         pivot_ds: xr.Dataset = self.pivot_mosaic.load(
             pivot_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
         )
-        # TODO: crop to footprint ?
 
         # Load pivot bands
         child_ds: xr.Dataset = self.child_mosaic.load(
             child_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
         )
-        # TODO: crop to footprint ?
 
         # Load pivot bands
         diff_dict = {}
@@ -290,21 +289,7 @@ class Pair(Set):
                 )
 
                 # Nans are conserved with +/-
-                # So only the overlapping footprint is loaded
-                """
-                a = xr.DataArray(np.ones([2, 2]))
-                    a[0, 0] = np.nan
-                b = xr.DataArray(2*np.ones([2, 2]))
-                    b[1, 0] = np.nan
-                a + b
-                    <xarray.DataArray (dim_0: 2, dim_1: 2)>
-                    array([[nan,  3.],
-                           [nan,  3.]])
-                a - b
-                    <xarray.DataArray (dim_0: 2, dim_1: 2)>
-                    array([[nan, -1.],
-                           [nan, -1.]])
-                """
+                # So only the overlapping extent WITH nodata of both pivot and child is loaded
                 if diff_method == DiffMethod.PIVOT_CHILD:
                     diff_arr = pivot_arr - child_arr
                 else:
@@ -357,7 +342,61 @@ class Pair(Set):
         # TODO: complete that
         return xarr
 
-    # TODO: stack
+    def stack(
+        self,
+        pivot_bands: Union[list, BandNames, str] = None,
+        child_bands: Union[list, BandNames, str] = None,
+        diff_bands: Union[list, BandNames, str] = None,
+        pixel_size: float = None,
+        diff_method: DiffMethod = DiffMethod.PIVOT_CHILD,
+        stack_path: Union[str, AnyPathType] = None,
+        save_as_int: bool = False,
+        **kwargs,
+    ) -> xr.DataArray:
+        """
+        Stack bands and index of a pair.
+
+        Args:
+            pivot_bands (list): Bands and index combination for the pivot mosaic
+            child_bands (list): Bands and index combination for the child mosaic
+            diff_bands (list): Bands and index combination for the difference between pivot and child mosaic
+            pixel_size (float): Stack pixel size. . If not specified, use the product pixel size.
+            stack_path (Union[str, AnyPathType]): Stack path
+            save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
+            **kwargs: Other arguments passed to :code:`load` or :code:`rioxarray.to_raster()` (such as :code:`compress`)
+
+        Returns:
+            xr.DataArray: Stack as a DataArray
+        """
+        """
+        if stack_path:
+            stack_path = AnyPath(stack_path)
+            if stack_path.is_file():
+                return utils.read(stack_path, pixel_size=pixel_size)
+            else:
+                os.makedirs(str(stack_path.parent), exist_ok=True)
+
+        # Create the analysis stack
+        band_ds = self.load(bands, pixel_size=pixel_size, **kwargs)
+
+        # Stack bands
+        if save_as_int:
+            nodata = kwargs.get("nodata", UINT16_NODATA)
+        else:
+            nodata = kwargs.get("nodata", self.nodata)
+        stack, dtype = utils.stack_dict(bands, band_ds, save_as_int, nodata, **kwargs)
+
+        # Update stack's attributes
+        stack = self._update_attrs(stack, bands, **kwargs)
+
+        # Write on disk
+        if stack_path:
+            LOGGER.debug("Saving stack")
+            utils.write(stack, stack_path, dtype=dtype, **kwargs)
+
+        return stack
+        """
+        raise NotImplementedError
 
     def _collocate_bands(self, bands: dict, reference: xr.DataArray = None) -> dict:
         """

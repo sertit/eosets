@@ -57,6 +57,9 @@ class Mosaic(Set):
         self.date = None
         """ Date of the mosaic. If not provided in kwargs, using the first product's date. """
 
+        self.datetime = None
+        """ Datetime of the mosaic. If not provided in kwargs, using the first product's datetime. """
+
         self.mosaic_method = MosaicMethod.convert_from(mosaic_method)[0]
         """ Mosaicing method. If GTIFF is specified, the temporary files from every products will be removed, if VRT is spoecified, they will not."""
 
@@ -152,7 +155,8 @@ class Mosaic(Set):
 
         # Create full_name
         self.nof_prods = len(self.get_prods())
-        self.date = first_prod.date.date()
+        self.date = kwargs.pop("date", first_prod.date.date())
+        self.datetime = kwargs.pop("datetime", first_prod.date.datetime())
         self.full_name = (
             f"{'-'.join([prod.condensed_name for prod in self.get_prods()])}"
         )
@@ -401,14 +405,14 @@ class Mosaic(Set):
                 os.makedirs(str(stack_path.parent), exist_ok=True)
 
         # Create the analysis stack
-        band_dict = self.load(bands, pixel_size=pixel_size, **kwargs)
+        band_ds = self.load(bands, pixel_size=pixel_size, **kwargs)
 
         # Stack bands
         if save_as_int:
             nodata = kwargs.get("nodata", UINT16_NODATA)
         else:
             nodata = kwargs.get("nodata", self.nodata)
-        stack, dtype = utils.stack_dict(bands, band_dict, save_as_int, nodata, **kwargs)
+        stack, dtype = utils.stack_dict(bands, band_ds, save_as_int, nodata, **kwargs)
 
         # Update stack's attributes
         stack = self._update_attrs(stack, bands, **kwargs)
