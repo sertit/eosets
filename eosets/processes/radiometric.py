@@ -11,7 +11,7 @@ from sertit import misc, strings
 from sertit.misc import ListEnum
 from sertit.rasters import MAX_CORES
 
-from eosets.multi_pairs import MultiPairs
+from eosets.pair import Pair
 from eosets.utils import EOSETS_NAME, AnyPathType
 
 LOGGER = logging.getLogger(EOSETS_NAME)
@@ -50,7 +50,7 @@ class PshMethod(ListEnum):
 
 
 def pansharpen(
-    pairs: MultiPairs,
+    pair: Pair,
     method: PshMethod = PshMethod.GDAL,
     output_path: Union[str, AnyPathType] = None,
 ) -> AnyPathType:
@@ -65,7 +65,7 @@ def pansharpen(
     ⚠ Other methods than ~PshMethod.GDAL need :code:`arcpy` to be installed!
 
     Args:
-        pairs (MultiPairs) : Pair which will be pansharpened
+        pair (MultiPairs) : Pair which will be pansharpened
         method (PshMethod): Pansharpening method (GDAL by default)
         output_path (Union[str, AnyPathType]): Output path, where to write the pansharpened stack
 
@@ -74,35 +74,28 @@ def pansharpen(
 
     """
     # Some checks
-    assert len(pairs.children_prods) <= 1
-    assert pairs.same_constellation
+    assert pair.same_constellation
 
     # Manage the products to have a PAN and a MS one
-    pan_prod = pairs.ref_prod
+    pan_mos = pair.pivot_mosaic
 
-    if pairs.has_child:
-        ms_prod = pairs.children_prods[0]
-        if not pairs.has_unique_child:
-            LOGGER.warning(
-                "Multiple children found in the pair. Only considering the first one."
-            )
+    if pair.has_child:
+        ms_mos = pair.child_mosaic
     else:
-        ms_prod = pairs.ref_prod
+        ms_mos = pair.pivot_mosaic
 
     # Convert method if needed
     method = PshMethod.from_value(method)
 
     # Create output path
     if not output_path:
-        output_path = (
-            pairs.output_path / f"{pairs.children_prods[0].condensed_name}_PSH.tif"
-        )
+        output_path = pair.output / f"{ms_mos.condensed_name}_PSH.tif"
 
     # Ensure output_path is a string here
     output_path = str(output_path)
 
     # Get sensor and sensor pansharpening weights (from ArcGis Pro)
-    sensor, sensor_weights = _get_sensor_psh_weights(pan_prod)
+    sensor, sensor_weights = _get_sensor_psh_weights(pan_mos)
 
     # Use arcpy (for now)
     if method != PshMethod.GDAL:
@@ -116,13 +109,13 @@ def pansharpen(
             )
 
         # Manage Landsat data that hasn't a stack to pansharpen and the PAN band in the same product
-        if isinstance(pan_prod, LandsatProduct):
-            ms_path = ms_prod._output / f"{ms_prod.condensed_name}_MS_stack.tif"
-            ms_prod.stack([BLUE, GREEN, RED, NIR], stack_path=ms_path)
-            pan_path = pan_prod.get_band_paths([PAN])[PAN]
+        if isinstance(pan_mos, LandsatProduct):
+            ms_path = ms_mos._output / f"{ms_mos.condensed_name}_MS_stack.tif"
+            ms_mos.stack([BLUE, GREEN, RED, NIR], stack_path=ms_path)
+            pan_path = pan_mos.get_band_paths([PAN])[PAN]
         else:
-            pan_path = pan_prod.get_default_band_path()
-            ms_path = ms_prod.get_default_band_path()
+            pan_path = pan_mos.get_default_band_path()
+            ms_path = ms_mos.get_default_band_path()
 
         # Pansharpen
         pansharpen_raster = Pansharpen(
@@ -138,9 +131,9 @@ def pansharpen(
         pansharpen_raster.save(output_path)
     else:
         # Manage Landsat data that haven't a stack to pansharpen and the PAN band in the same product
-        if isinstance(pan_prod, LandsatProduct):
-            pan_path = pan_prod.get_band_paths([PAN])[PAN]
-            band_paths = ms_prod.get_band_paths([RED, GREEN, BLUE, NIR])
+        if isinstance(pan_mos, LandsatProduct):
+            pan_path = pan_mos.get_band_paths([PAN])[PAN]
+            band_paths = ms_mos.get_band_paths([RED, GREEN, BLUE, NIR])
             ms_cli = [
                 strings.to_cmd_string(band_paths[RED]),
                 strings.to_cmd_string(band_paths[GREEN]),
@@ -148,13 +141,13 @@ def pansharpen(
                 strings.to_cmd_string(band_paths[NIR]),
             ]
         else:
-            pan_path = pan_prod.get_default_band_path()
-            ms_path = strings.to_cmd_string(ms_prod.get_default_band_path())
+            pan_path = pan_mos.get_default_band_path()
+            ms_path = strings.to_cmd_string(ms_mos.get_default_band_path())
             ms_cli = [
-                f"{ms_path}, band={ms_prod.bands[RED].id}",
-                f"{ms_path}, band={ms_prod.bands[GREEN].id}",
-                f"{ms_path}, band={ms_prod.bands[BLUE].id}",
-                f"{ms_path}, band={ms_prod.bands[NIR].id}",
+                f"{ms_path}, band={ms_mos.bands[RED].id}",
+                f"{ms_path}, band={ms_mos.bands[GREEN].id}",
+                f"{ms_path}, band={ms_mos.bands[BLUE].id}",
+                f"{ms_path}, band={ms_mos.bands[NIR].id}",
             ]
 
         # BGRNIR weights
@@ -170,7 +163,7 @@ def pansharpen(
                 "-threads",
                 str(MAX_CORES),
                 "-nodata",
-                str(pairs.nodata),
+                str(pair.nodata),
             ]
         )
 

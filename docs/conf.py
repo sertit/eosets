@@ -246,8 +246,16 @@ def my_doc_skip(app, what, name, obj, skip, options):
 
     return skip
 
+import os, shutil
+def copy_static(app, docname):
+    if app.builder.name == 'html':
+        output_dir = os.path.join(app.outdir, 'docs', '_static')
+        source_dir = os.path.join(app.srcdir, '..', 'docs', '_static')
+        if not os.path.exists(output_dir):
+            shutil.copytree(source_dir, output_dir)
 
 def setup(app):
     """dummy docstring for pydocstyle"""
     app.connect('autodoc-skip-member', my_doc_skip)
     app.connect("html-page-context", _html_page_context)
+    app.connect('build-finished', copy_static)

@@ -64,6 +64,7 @@ class Set:
         """ Mosaic condensed name, a mix based on the dates and constellations of the components of the mosaic. """
 
         # Manage output path
+        # Don't use output properties here, subsets are not yet initialized!
         if output_path:
             self._tmp_output = None
             self._output = AnyPath(output_path)
@@ -71,7 +72,7 @@ class Set:
             self._tmp_output = tempfile.TemporaryDirectory()
             self._output = AnyPath(self._tmp_output.name)
 
-        self._tmp_process = self.output.joinpath("tmp_mosaic")
+        self._tmp_process = self.output.joinpath("tmp")
         os.makedirs(self._tmp_process, exist_ok=True)
 
         self.id: str = id
@@ -158,7 +159,7 @@ class Set:
 
         # Create temporary process folder
         old_tmp_process = self._tmp_process
-        self._tmp_process = self._output.joinpath(f"tmp_{self.condensed_name}")
+        self._tmp_process = self._output.joinpath("tmp")
         os.makedirs(self._tmp_process, exist_ok=True)
 
         # Update for prods

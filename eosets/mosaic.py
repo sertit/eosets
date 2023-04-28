@@ -131,7 +131,12 @@ class Mosaic(Set):
         remove_tmp = True
 
         # Open first product as a reference
-        first_prod: Product = READER.open(paths[0], remove_tmp=remove_tmp, **kwargs)
+        first_prod: Product = READER.open(
+            paths[0],
+            remove_tmp=remove_tmp,
+            output_path=self._get_tmp_folder(writable=True),
+            **kwargs,
+        )
         if first_prod is None:
             raise ValueError(
                 f"There is no existing products in EOReader corresponding to {paths[0]}"
@@ -141,7 +146,12 @@ class Mosaic(Set):
 
         # Open others
         for path in paths[1:]:
-            prod: Product = READER.open(path, remove_tmp=remove_tmp, **kwargs)
+            prod: Product = READER.open(
+                path,
+                remove_tmp=remove_tmp,
+                output_path=self._get_tmp_folder(writable=True),
+                **kwargs,
+            )
             if prod is None:
                 raise ValueError(
                     f"There is no existing products in EOReader corresponding to {path}"
@@ -155,8 +165,8 @@ class Mosaic(Set):
 
         # Create full_name
         self.nof_prods = len(self.get_prods())
-        self.date = kwargs.pop("date", first_prod.date.date())
-        self.datetime = kwargs.pop("datetime", first_prod.date.datetime())
+        self.date = kwargs.pop("date", first_prod.date)
+        self.datetime = kwargs.pop("datetime", first_prod.datetime)
         self.full_name = (
             f"{'-'.join([prod.condensed_name for prod in self.get_prods()])}"
         )
@@ -167,16 +177,6 @@ class Mosaic(Set):
         # TODO: if all same constellation, set it only once
         # TODO: add sth ?
         self.condensed_name = f"{self.date.strftime('%Y%m%d')}_{'-'.join(list(set([prod.constellation_id for prod in self.get_prods()])))}"
-
-        # Rename tmp_process and set product outputs
-        self._tmp_process = AnyPath(
-            shutil.move(
-                str(self._tmp_process),
-                str(self.output.joinpath(f"tmp_{self.condensed_name}")),
-            )
-        )
-        for prod in self.get_prods():
-            prod.output = self._get_tmp_folder(writable=True)
 
         if self.id is None:
             self.id = self.condensed_name
@@ -357,7 +357,9 @@ class Mosaic(Set):
                         prod_path.append(out_path)
                 else:
                     prod_path = prod_band_paths[band]
-                merge_fct(prod_path, output_path, **kwargs)
+
+                # Don't pass kwargs here because of unwanted errors
+                merge_fct(prod_path, output_path)
 
             # Load in memory and update attribute
             merged_dict[band] = self._update_attrs(

@@ -1,4 +1,5 @@
 """ Class implementing the pairs """
+import logging
 from enum import unique
 from pathlib import Path
 from typing import Union
@@ -8,7 +9,6 @@ import xarray as xr
 from cloudpathlib import CloudPath
 from eoreader import cache
 from eoreader.bands import BandNames, to_band, to_str
-from eoreader.reader import Reader
 from rasterio.enums import Resampling
 from sertit.misc import ListEnum
 
@@ -16,9 +16,9 @@ from eosets import utils
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 from eosets.set import GeometryCheck, Set
-from eosets.utils import AnyPathType
+from eosets.utils import EOSETS_NAME, AnyPathType
 
-READER = Reader
+LOGGER = logging.getLogger(EOSETS_NAME)
 
 
 @unique
@@ -136,7 +136,7 @@ class Pair(Set):
         # Manage reference product
         self.pivot_mosaic: Mosaic = Mosaic(
             pivot_paths,
-            output_path=self.output,
+            output_path=self._get_tmp_folder(writable=True),
             remove_tmp=self._remove_tmp,
             contiguity_check=contiguity_check,
         )
@@ -148,7 +148,7 @@ class Pair(Set):
         if self.has_child:
             self.child_mosaic: Mosaic = Mosaic(
                 child_paths,
-                output_path=self.output,
+                output_path=self._get_tmp_folder(writable=True),
                 remove_tmp=self._remove_tmp,
                 contiguity_check=contiguity_check,
             )
@@ -269,7 +269,9 @@ class Pair(Set):
         # Load pivot bands
         diff_dict = {}
         for band in diff_bands:
-            diff_path, exists = self._get_out_path(f"{self.id}_{to_str(band)[0]}.tif")
+            diff_path, exists = self._get_out_path(
+                f"{self.condensed_name}_{to_str(band)[0]}.tif"
+            )
             if exists:
                 diff_arr = utils.read(
                     path=diff_bands_path[band],
@@ -278,6 +280,7 @@ class Pair(Set):
                     **kwargs,
                 )
             else:
+                f"*** Loading d{to_str(band)} for {self.condensed_name} ***"
                 pivot_arr = pivot_ds[band]
                 child_arr = child_ds[band]
 
@@ -305,6 +308,9 @@ class Pair(Set):
 
             diff_dict[band] = diff_arr
 
+        # Collocate diff bands
+        diff_dict = self._collocate_bands(diff_dict)
+
         # Drop not wanted bands from pivot and child datasets
         pivot_ds = pivot_ds.drop_vars(
             [band for band in pivot_ds.keys() if band not in pivot_bands]
@@ -312,9 +318,6 @@ class Pair(Set):
         child_ds = child_ds.drop_vars(
             [band for band in child_ds.keys() if band not in child_bands]
         )
-
-        # Collocate diff bands
-        diff_dict = self._collocate_bands(diff_dict)
 
         # Create diff dataset
         coords = None
