@@ -11,3 +11,4 @@ AnyPathType = Union[CloudPath, Path]
 
 read = utils.read
 write = utils.write
+stack_dict = utils.stack_dict

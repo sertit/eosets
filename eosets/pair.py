@@ -1,15 +1,18 @@
 """ Class implementing the pairs """
 import logging
+import os
 from enum import unique
 from pathlib import Path
 from typing import Union
 
 import geopandas as gpd
 import xarray as xr
-from cloudpathlib import CloudPath
+from cloudpathlib import AnyPath, CloudPath
 from eoreader import cache
 from eoreader.bands import BandNames, to_band, to_str
+from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
+from sertit import rasters
 from sertit.misc import ListEnum
 
 from eosets import utils
@@ -224,7 +227,20 @@ class Pair(Set):
         resampling: Resampling = Resampling.bilinear,
         **kwargs,
     ) -> (xr.Dataset, xr.Dataset, xr.Dataset):
-        """"""
+        """
+
+        Args:
+            pivot_bands:
+            child_bands:
+            diff_bands:
+            pixel_size:
+            diff_method:
+            resampling:
+            **kwargs:
+
+        Returns:
+            (xr.Dataset, xr.Dataset, xr.Dataset):
+        """
         assert any(
             [pivot_bands is not None, child_bands is not None, diff_bands is not None]
         )
@@ -274,7 +290,7 @@ class Pair(Set):
             )
             if exists:
                 diff_arr = utils.read(
-                    path=diff_bands_path[band],
+                    path=diff_path,
                     pixel_size=pixel_size,
                     resampling=resampling,
                     **kwargs,
@@ -373,7 +389,23 @@ class Pair(Set):
         """
         # TODO: stack bands in the wanted order
         # Be sure to update band names with product name!
-        """
+
+        assert any(
+            [pivot_bands is not None, child_bands is not None, diff_bands is not None]
+        )
+
+        # Convert just in case
+        if pivot_bands is None:
+            pivot_bands = []
+        if child_bands is None:
+            child_bands = []
+        if diff_bands is None:
+            diff_bands = []
+
+        pivot_bands = to_band(pivot_bands)
+        child_bands = to_band(child_bands)
+        diff_bands = to_band(diff_bands)
+
         if stack_path:
             stack_path = AnyPath(stack_path)
             if stack_path.is_file():
@@ -381,18 +413,38 @@ class Pair(Set):
             else:
                 os.makedirs(str(stack_path.parent), exist_ok=True)
 
-        # Create the analysis stack
-        band_ds = self.load(bands, pixel_size=pixel_size, **kwargs)
+        # Load all bands
+        pivot_ds, child_ds, diff_ds = self.load(
+            pivot_bands, child_bands, diff_bands, pixel_size=pixel_size, **kwargs
+        )
+
+        # Rename bands
+        pivot_band_mapping = {band: f"Pivot_{band}" for band in pivot_bands}
+        child_band_mapping = {band: f"Child_{band}" for band in child_bands}
+        diff_band_mapping = {band: f"d{band}" for band in diff_bands}
+        all_bands = (
+            list(pivot_band_mapping.values())
+            + list(child_band_mapping.values())
+            + list(diff_band_mapping.values())
+        )
+        pivot_ds = pivot_ds.rename_vars(pivot_band_mapping)
+        child_ds = rasters.collocate(pivot_ds, child_ds.rename_vars(child_band_mapping))
+        diff_ds = rasters.collocate(pivot_ds, diff_ds.rename_vars(diff_band_mapping))
+
+        # Merge datasets
+        band_ds = xr.merge([pivot_ds, child_ds, diff_ds])
 
         # Stack bands
         if save_as_int:
             nodata = kwargs.get("nodata", UINT16_NODATA)
         else:
             nodata = kwargs.get("nodata", self.nodata)
-        stack, dtype = utils.stack_dict(bands, band_ds, save_as_int, nodata, **kwargs)
+        stack, dtype = utils.stack_dict(
+            all_bands, band_ds, save_as_int, nodata, **kwargs
+        )
 
         # Update stack's attributes
-        stack = self._update_attrs(stack, bands, **kwargs)
+        stack = self._update_attrs(stack, all_bands, **kwargs)
 
         # Write on disk
         if stack_path:
@@ -400,8 +452,6 @@ class Pair(Set):
             utils.write(stack, stack_path, dtype=dtype, **kwargs)
 
         return stack
-        """
-        raise NotImplementedError
 
     def _collocate_bands(self, bands: dict, reference: xr.DataArray = None) -> dict:
         """
