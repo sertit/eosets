@@ -371,6 +371,8 @@ class Pair(Set):
         Returns:
             xr.DataArray: Stack as a DataArray
         """
+        # TODO: stack bands in the wanted order
+        # Be sure to update band names with product name!
         """
         if stack_path:
             stack_path = AnyPath(stack_path)
