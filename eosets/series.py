@@ -1,22 +1,28 @@
 """ Class implementing the series object """
+import logging
+import os
 from enum import unique
 from pathlib import Path
 from typing import Union
 
 import geopandas as gpd
+import numpy as np
 import xarray as xr
-from cloudpathlib import CloudPath
+from cloudpathlib import AnyPath, CloudPath
 from eoreader import cache
 from eoreader.bands import BandNames, to_band
 from eoreader.reader import Reader
+from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
 from sertit.misc import ListEnum
 
+from eosets import utils
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 from eosets.set import GeometryCheck, Set
-from eosets.utils import AnyPathType
+from eosets.utils import EOSETS_NAME, AnyPathType
 
+LOGGER = logging.getLogger(EOSETS_NAME)
 READER = Reader()
 
 
@@ -79,7 +85,7 @@ class Series(Set):
         self.coregister = coregister
         """ Do we need to coregister the time series? """
 
-        self._ruling_mosaic = ruling_mosaic
+        self.ruling_mosaic = ruling_mosaic
         """ Ruling mosaic """
 
         self._unique_mosaic = len(paths) == 1
@@ -135,7 +141,11 @@ class Series(Set):
         Returns:
             list: Products list
         """
-        return [mos.get_prods() for mos in self.mosaics]
+        prods = []
+        for mos in self.mosaics:
+            prods += mos.get_prods()
+
+        return prods
 
     def _manage_mosaics(
         self,
@@ -251,7 +261,7 @@ class Series(Set):
         footprint = None
         for mos in self.mosaics:
             geom: gpd.GeoDataFrame = mos.footprint().to_crs(self.ruling_mosaic.crs)
-            if not footprint:
+            if footprint is None:
                 footprint = geom
             else:
                 footprint = footprint.overlay(geom, "intersection")
@@ -270,7 +280,7 @@ class Series(Set):
         extent = None
         for mos in self.mosaics:
             geom: gpd.GeoDataFrame = mos.footprint().to_crs(self.ruling_mosaic.crs)
-            if not extent:
+            if extent is None:
                 extent = geom
             else:
                 extent = extent.overlay(geom, "intersection")
@@ -316,17 +326,17 @@ class Series(Set):
                 mos_ds = ruling_ds
 
             # Set a time coordinate to distinguish the mosaics
-            dt = mos.datetime()
+            dt = mos.datetime
             bands_dict[dt] = mos_ds.assign_coords({"time": dt})
 
         # Create a dataset (only after collocation)
         coords = None
         if bands_dict:
             coords = ruling_ds.coords
-            coords["time"] = bands_dict.keys()
+            coords["time"] = list(bands_dict.keys())
 
         # Make sure the dataset has the bands in the right order -> re-order the input dict
-        return xr.Dataset({key: bands_dict[key] for key in bands}, coords=coords)
+        return xr.Dataset({key: mos_ds[key] for key in bands}, coords=coords)
 
     def stack(
         self,
@@ -349,7 +359,51 @@ class Series(Set):
         Returns:
             xr.DataArray: Stack as a DataArray
         """
-        raise NotImplementedError
+        # Convert just in case
+        if bands is None:
+            bands = []
+        bands = to_band(bands)
+
+        if stack_path:
+            stack_path = AnyPath(stack_path)
+            if stack_path.is_file():
+                return utils.read(stack_path, pixel_size=pixel_size)
+            else:
+                os.makedirs(str(stack_path.parent), exist_ok=True)
+
+        # Load all bands
+        band_ds = self.load(bands, pixel_size=pixel_size, **kwargs)
+
+        # Rename bands and remove time variable
+        coords = {"x": band_ds.x, "y": band_ds.y, "band": 1}
+
+        stack_dict = {}
+        for band in bands:
+            for idx, dt in enumerate(band_ds.time.values):
+                stack_dict[f"{np.datetime_as_string(dt, unit='s')}_{band}"] = (
+                    band_ds.sel(time=dt, drop=True)
+                    .to_array()
+                    .squeeze(dim=["variable"], drop=True)
+                )
+
+        stack_ds = xr.Dataset(stack_dict, coords=coords)
+
+        # Stack bands
+        if save_as_int:
+            nodata = kwargs.get("nodata", UINT16_NODATA)
+        else:
+            nodata = kwargs.get("nodata", self.nodata)
+        stack, dtype = utils.stack_dict(bands, stack_ds, save_as_int, nodata, **kwargs)
+
+        # Update stack's attributes
+        stack = self._update_attrs(stack, list(stack_dict.keys()), **kwargs)
+
+        # Write on disk
+        if stack_path:
+            LOGGER.debug("Saving stack")
+            utils.write(stack, stack_path, dtype=dtype, **kwargs)
+
+        return stack
 
     def _update_attrs_constellation_specific(
         self, xarr: xr.DataArray, bands: list, **kwargs
