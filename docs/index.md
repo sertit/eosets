@@ -11,6 +11,7 @@
 
    notebooks/mosaic
    notebooks/pair
+   notebooks/series
 ```
 
 ```{eval-rst}

@@ -1,6 +1,7 @@
 """ Class implementing the series object """
 import logging
 import os
+from collections import defaultdict
 from enum import unique
 from pathlib import Path
 from typing import Union
@@ -10,7 +11,7 @@ import numpy as np
 import xarray as xr
 from cloudpathlib import AnyPath, CloudPath
 from eoreader import cache
-from eoreader.bands import BandNames, to_band
+from eoreader.bands import BandNames, to_band, to_str
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
@@ -295,7 +296,6 @@ class Series(Set):
         **kwargs,
     ) -> (dict, dict, dict):
         """"""
-        bands_dict = {}
         bands = to_band(bands)
 
         # Load bands
@@ -304,11 +304,17 @@ class Series(Set):
         # Load pivot bands
         ruling_ds = self.ruling_mosaic.load(
             bands, pixel_size=pixel_size, window=window, **kwargs
-        )
+        ).expand_dims({"time": [self.ruling_mosaic.datetime]}, axis=-1)
 
         # Load mosaic bands
-        for mos in self.mosaics:
+        arr_dict = defaultdict(list)
+        for mos_id, mos in enumerate(self.mosaics):
+            # Get mosaic datetime
+            dt = mos.datetime
+
+            # Manage if band to be loaded or already on memory
             if mos.id != self.ruling_mosaic.id:
+                # Load bands for new mosaic
                 mos_ds = mos.load(bands, pixel_size=pixel_size, window=window, **kwargs)
 
                 # Add the bands to the dataset
@@ -319,24 +325,36 @@ class Series(Set):
                     # To be sure, always collocate arrays, even if the size is the same
                     # Indeed, a small difference in the coordinates will lead to empy arrays
                     # So the bands MUST BE exactly aligned
-                    mos_ds[band] = mos_arr.rio.reproject_match(
-                        ruling_arr, resampling=resampling, **kwargs
+                    mos_arr = (
+                        mos_arr.rio.reproject_match(
+                            ruling_arr, resampling=resampling, **kwargs
+                        )
+                        .expand_dims({"time": [dt]}, axis=-1)
+                        .assign_coords({"time": [dt]})
                     )
+
+                    # Save mosaics
+                    arr_dict[band].append(mos_arr)
             else:
-                mos_ds = ruling_ds
+                # We already have the bands in memory, just assign time to every arrays and save it
+                for band in bands:
+                    mos_arr = ruling_ds[band].assign_coords({"time": [dt]})
+                    arr_dict[band].append(mos_arr)
 
-            # Set a time coordinate to distinguish the mosaics
-            dt = mos.datetime
-            bands_dict[dt] = mos_ds.assign_coords({"time": dt})
-
-        # Create a dataset (only after collocation)
-        coords = None
-        if bands_dict:
-            coords = ruling_ds.coords
-            coords["time"] = list(bands_dict.keys())
+        # Create empty dataset with correct coordinates
+        series_ds = xr.Dataset(
+            coords={
+                "x": ruling_ds.x,
+                "y": ruling_ds.y,
+                "band": np.arange(1, len(self.mosaics) + 1),  # One array per band
+                "time": [mos.datetime for mos in self.mosaics],
+            }
+        )
 
         # Make sure the dataset has the bands in the right order -> re-order the input dict
-        return xr.Dataset({key: mos_ds[key] for key in bands}, coords=coords)
+        series_ds = xr.merge([xr.merge(arr_dict[band]) for band in bands])
+
+        return series_ds
 
     def stack(
         self,
@@ -376,16 +394,14 @@ class Series(Set):
 
         # Rename bands and remove time variable
         coords = {"x": band_ds.x, "y": band_ds.y, "band": 1}
-
         stack_dict = {}
         for band in bands:
             for idx, dt in enumerate(band_ds.time.values):
-                stack_dict[f"{np.datetime_as_string(dt, unit='s')}_{band}"] = (
-                    band_ds.sel(time=dt, drop=True)
-                    .to_array()
-                    .squeeze(dim=["variable"], drop=True)
-                )
+                stack_dict[
+                    f"{np.datetime_as_string(dt, unit='s')}_{to_str(band)[0]}"
+                ] = band_ds[band].sel(time=dt, drop=True)
 
+        # Create a dataset correctly formatted for stacking
         stack_ds = xr.Dataset(stack_dict, coords=coords)
 
         # Stack bands
