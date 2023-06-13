@@ -62,7 +62,7 @@ class Series(Set):
 
     def __init__(
         self,
-        paths: Union[list, str, Path, CloudPath],
+        paths: list,
         id: str = None,
         output_path: Union[str, Path, CloudPath] = None,
         remove_tmp: bool = True,
@@ -167,12 +167,15 @@ class Series(Set):
         self.mosaics: list[Mosaic] = []
         for paths in mosaic_paths:
             # Open the mosaic
-            mos = Mosaic(
-                paths,
-                output_path=self.output,
-                remove_tmp=self._remove_tmp,
-                contiguity_check=contiguity_check,
-            )
+            if isinstance(paths, Mosaic):
+                mos = paths
+            else:
+                mos = Mosaic(
+                    paths,
+                    output_path=self.output,
+                    remove_tmp=self._remove_tmp,
+                    contiguity_check=contiguity_check,
+                )
 
             # Check datetime compatibility
             if all(other_mos.datetime != mos.datetime for other_mos in self.mosaics):
@@ -248,7 +251,7 @@ class Series(Set):
 
     def read_mtd(self):
         """"""
-        # TODO: how ? Just return the fields that are shared between mosaic's components ? Or create a XML from scratch ?
+        # TODO: how ? Just return the fields that are shared between series' components ? Or create a XML from scratch ?
         raise NotImplementedError
 
     @cache

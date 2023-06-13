@@ -37,8 +37,8 @@ class Pair(Set):
 
     def __init__(
         self,
-        pivot_paths: Union[list, str, Path, CloudPath],
-        child_paths: Union[list, str, Path, CloudPath] = None,
+        pivot_paths: Union[list, str, Path, CloudPath, Mosaic],
+        child_paths: Union[list, str, Path, CloudPath, Mosaic] = None,
         id: str = None,
         output_path: Union[str, Path, CloudPath] = None,
         remove_tmp: bool = True,
@@ -61,7 +61,7 @@ class Pair(Set):
 
         # Information regarding the pair composition
         self.has_child = None
-        """ Does the pair have a child? (Pair with only one reference is allowed) """
+        """ Does the pair have a child? (Pair with only one pivot is allowed) """
 
         contiguity_check = GeometryCheck.convert_from(contiguity_check)[0]
         overlap_check = GeometryCheck.convert_from(overlap_check)[0]
@@ -121,8 +121,8 @@ class Pair(Set):
 
     def _manage_mosaics(
         self,
-        pivot_paths: Union[list, str, Path, CloudPath],
-        child_paths: Union[list, str, Path, CloudPath] = None,
+        pivot_paths: Union[list, str, Path, CloudPath, Mosaic],
+        child_paths: Union[list, str, Path, CloudPath, Mosaic] = None,
         contiguity_check: GeometryCheck = GeometryCheck.EXTENT,
         overlap_check: GeometryCheck = GeometryCheck.EXTENT,
     ) -> None:
@@ -137,31 +137,37 @@ class Pair(Set):
             IncompatibleProducts: Incompatible products if not contiguous or not the same date
         """
         # Manage reference product
-        self.pivot_mosaic: Mosaic = Mosaic(
-            pivot_paths,
-            output_path=self._get_tmp_folder(writable=True),
-            remove_tmp=self._remove_tmp,
-            contiguity_check=contiguity_check,
-        )
+        if isinstance(pivot_paths, Mosaic):
+            self.pivot_mosaic = pivot_paths
+        else:
+            self.pivot_mosaic: Mosaic = Mosaic(
+                pivot_paths,
+                output_path=self._get_tmp_folder(writable=True),
+                remove_tmp=self._remove_tmp,
+                contiguity_check=contiguity_check,
+            )
         self.pivot_id: str = self.pivot_mosaic.id
 
         # Information regarding the pair composition
         self.has_child: bool = len(child_paths) > 0
 
         if self.has_child:
-            self.child_mosaic: Mosaic = Mosaic(
-                child_paths,
-                output_path=self._get_tmp_folder(writable=True),
-                remove_tmp=self._remove_tmp,
-                contiguity_check=contiguity_check,
-            )
+            if isinstance(pivot_paths, Mosaic):
+                self.pivot_mosaic = pivot_paths
+            else:
+                self.child_mosaic: Mosaic = Mosaic(
+                    child_paths,
+                    output_path=self._get_tmp_folder(writable=True),
+                    remove_tmp=self._remove_tmp,
+                    contiguity_check=contiguity_check,
+                )
             self.child_id: str = self.child_mosaic.id
 
             # Make the checks
             # CRS
-            if self.pivot_mosaic.crs != self.pivot_mosaic.crs:
+            if self.pivot_mosaic.crs != self.child_mosaic.crs:
                 raise IncompatibleProducts(
-                    f"Pivot and child mosaics should have the same CRS! {self.pivot_mosaic.crs=} != {self.pivot_mosaic.crs=}"
+                    f"Pivot and child mosaics should have the same CRS! {self.pivot_mosaic.crs=} != {self.child_mosaic.crs=}"
                 )
 
             # Geometry
@@ -183,7 +189,7 @@ class Pair(Set):
 
     def read_mtd(self):
         """"""
-        # TODO: how ? Just return the fields that are shared between mosaic's components ? Or create a XML from scratch ?
+        # TODO: how ? Just return the fields that are shared between pair's components ? Or create a XML from scratch ?
         raise NotImplementedError
 
     @cache
