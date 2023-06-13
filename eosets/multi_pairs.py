@@ -1,4 +1,4 @@
-""" Class implementing the pairs. Load and stack raise NotImplementedError for now. Please write an issue if you see any usecase. """
+""" Class implementing the multi-pairs. Load and stack raise NotImplementedError for now. Please write an issue if you see any usecase. """
 import logging
 from pathlib import Path
 from typing import Union
@@ -81,7 +81,7 @@ class MultiPairs(Set):
 
     def clean_tmp(self):
         """
-        Clean the temporary directory of the current product
+        Clean the temporary directory of the current multi-pairs
         """
         self.pivot_mosaic.clean_tmp()
         for mos in self.children_mosaics:
@@ -89,7 +89,7 @@ class MultiPairs(Set):
 
     def clear(self):
         """
-        Clear this product's cache
+        Clear this multi-pairs' cache
         """
         # Delete all cached properties and functions
         self.pivot_mosaic.clear()
@@ -125,11 +125,17 @@ class MultiPairs(Set):
         overlap_check: GeometryCheck = GeometryCheck.EXTENT,
     ) -> None:
         """
-        Check if the pivot and child mosaics are overlapping
+        Check if the pivot and children mosaics are overlapping and if their CRS are the same.
 
-        TODO: same constellation ? same CRS ?...
+        TODO: check if same constellation ?
 
         If not, throws a IncompatibleProducts error.
+
+        Args:
+            pivot_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the pivot mosaic
+            children_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the children mosaics
+            contiguity_check (GeometryCheck): Check regarding the contiguity of the products of the mosaics
+            overlap_check (GeometryCheck): Check regarding the overlapping of the two mosaics
 
         Raises:
             IncompatibleProducts: Incompatible products if not contiguous or not the same date
@@ -181,17 +187,17 @@ class MultiPairs(Set):
         self.nof_prods = len(self.get_prods())
 
     def read_mtd(self):
-        """"""
+        """Read the pair's metadata, but not implemented for now."""
         # TODO: how ? Just return the fields that are shared between multi_pairs' components ? Or create a XML from scratch ?
         raise NotImplementedError
 
     @cache
     def footprint(self) -> gpd.GeoDataFrame:
         """
-        Get the footprint of the pair, i.e. the intersection between pivot and child footprints.
+        Get the footprint of the multi-pairs, i.e. the intersection between pivot and children footprints.
 
         Returns:
-            gpd.GeoDataFrame: Footprint of the mosaic
+            gpd.GeoDataFrame: Footprint of the multi-pairs
         """
         footprint: gpd.GeoDataFrame = self.pivot_mosaic.footprint()
 
@@ -205,10 +211,10 @@ class MultiPairs(Set):
     @cache
     def extent(self) -> gpd.GeoDataFrame:
         """
-        Get the extent of the pair, i.e. the intersection between pivot and child extents.
+        Get the extent of the multi-pairs, i.e. the intersection between pivot and children extents.
 
         Returns:
-            gpd.GeoDataFrame: Extent of the mosaic
+            gpd.GeoDataFrame: Extent of the multi-pairs
 
         """
         extent: gpd.GeoDataFrame = self.pivot_mosaic.footprint()
@@ -221,7 +227,7 @@ class MultiPairs(Set):
     def load(
         self,
         pivot_bands: Union[list, BandNames, str] = None,
-        child_bands: Union[list, BandNames, str] = None,
+        children_bands: Union[list, BandNames, str] = None,
         diff_bands: Union[list, BandNames, str] = None,
         pixel_size: float = None,
         diff_method: DiffMethod = DiffMethod.PIVOT_CHILD,
@@ -229,18 +235,21 @@ class MultiPairs(Set):
         **kwargs,
     ) -> (xr.Dataset, xr.Dataset, xr.Dataset):
         """
+        **NotImplemented**
+
+        Load the bands and compute the wanted spectral indices for pivot, child and diff.
 
         Args:
-            pivot_bands:
-            child_bands:
-            diff_bands:
-            pixel_size:
-            diff_method:
-            resampling:
-            **kwargs:
+            pivot_bands (Union[list, BandNames, str]): Wanted pivot bands
+            children_bands (Union[list, BandNames, str]): Wanted child bands
+            diff_bands (Union[list, BandNames, str]): Wanted diff bands
+            pixel_size (float): Pixel size of the returned Datasets. If not specified, use the pair's pixel size.
+            diff_method (DiffMethod): Difference method for the computation of diff_bands
+            resampling (Resampling): Resampling method
+            kwargs: Other arguments used to load bands
 
         Returns:
-            (xr.Dataset, xr.Dataset, xr.Dataset):
+            (xr.Dataset, xr.Dataset, xr.Dataset): Pivot, child and diff wanted bands as xr.Datasets
         """
         raise NotImplementedError
 
@@ -263,7 +272,7 @@ class MultiPairs(Set):
     def stack(
         self,
         pivot_bands: Union[list, BandNames, str] = None,
-        child_bands: Union[list, BandNames, str] = None,
+        children_bands: Union[list, BandNames, str] = None,
         diff_bands: Union[list, BandNames, str] = None,
         pixel_size: float = None,
         diff_method: DiffMethod = DiffMethod.PIVOT_CHILD,
@@ -272,11 +281,13 @@ class MultiPairs(Set):
         **kwargs,
     ) -> xr.DataArray:
         """
+        **NotImplemented**
+
         Stack bands and index of a pair.
 
         Args:
             pivot_bands (list): Bands and index combination for the pivot mosaic
-            child_bands (list): Bands and index combination for the child mosaic
+            children_bands (list): Bands and index combination for the child mosaic
             diff_bands (list): Bands and index combination for the difference between pivot and child mosaic
             pixel_size (float): Stack pixel size. . If not specified, use the product pixel size.
             stack_path (Union[str, AnyPathType]): Stack path

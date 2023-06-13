@@ -1,4 +1,4 @@
-""" Class implementing the pairs """
+""" Class implementing a two-products pair """
 import logging
 import os
 from enum import unique
@@ -46,13 +46,14 @@ class Pair(Set):
         contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
         **kwargs,
     ):
-        # Manage reference product
+        # Manage pivot mosaic
         self.pivot_mosaic = None
         """ Pivot mosaic (unique date and contiguous). The one on which the child will be aligned. """
 
         self.pivot_id = None
         """ ID of the pivot product """
 
+        # Manage child mosaic
         self.child_mosaic = None
         """ Child mosaic (unique date and contiguous). The one which will be aligned on the pivot. """
 
@@ -63,6 +64,7 @@ class Pair(Set):
         self.has_child = None
         """ Does the pair have a child? (Pair with only one pivot is allowed) """
 
+        # Convert the checks to the corresponding enums
         contiguity_check = GeometryCheck.convert_from(contiguity_check)[0]
         overlap_check = GeometryCheck.convert_from(overlap_check)[0]
 
@@ -90,14 +92,14 @@ class Pair(Set):
 
     def clean_tmp(self):
         """
-        Clean the temporary directory of the current product
+        Clean the temporary directory of the current pair
         """
         self.pivot_mosaic.clean_tmp()
         self.child_mosaic.clean_tmp()
 
     def clear(self):
         """
-        Clear this product's cache
+        Clear this pair's cache
         """
         # Delete all cached properties and functions
         self.pivot_mosaic.clear()
@@ -127,11 +129,17 @@ class Pair(Set):
         overlap_check: GeometryCheck = GeometryCheck.EXTENT,
     ) -> None:
         """
-        Check if the pivot and child mosaics are overlapping
+        Check if the pivot and child mosaics are overlapping and if their CRS are the same.
 
-        TODO: same constellation ? same CRS ?...
+        TODO: check if same constellation ?
 
         If not, throws a IncompatibleProducts error.
+
+        Args:
+            pivot_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the pivot mosaic
+            child_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the child mosaic
+            contiguity_check (GeometryCheck): Check regarding the contiguity of the products of the mosaics
+            overlap_check (GeometryCheck): Check regarding the overlapping of the two mosaics
 
         Raises:
             IncompatibleProducts: Incompatible products if not contiguous or not the same date
@@ -188,7 +196,7 @@ class Pair(Set):
         self.nof_prods = len(self.get_prods())
 
     def read_mtd(self):
-        """"""
+        """Read the pair's metadata, but not implemented for now."""
         # TODO: how ? Just return the fields that are shared between pair's components ? Or create a XML from scratch ?
         raise NotImplementedError
 
@@ -198,7 +206,7 @@ class Pair(Set):
         Get the footprint of the pair, i.e. the intersection between pivot and child footprints.
 
         Returns:
-            gpd.GeoDataFrame: Footprint of the mosaic
+            gpd.GeoDataFrame: Footprint of the pair
         """
         pivot_geom: gpd.GeoDataFrame = self.pivot_mosaic.footprint()
         child_geom: gpd.GeoDataFrame = self.child_mosaic.footprint().to_crs(
@@ -213,7 +221,7 @@ class Pair(Set):
         Get the extent of the pair, i.e. the intersection between pivot and child extents.
 
         Returns:
-            gpd.GeoDataFrame: Extent of the mosaic
+            gpd.GeoDataFrame: Extent of the pair
 
         """
         pivot_geom: gpd.GeoDataFrame = self.pivot_mosaic.extent()
@@ -234,18 +242,19 @@ class Pair(Set):
         **kwargs,
     ) -> (xr.Dataset, xr.Dataset, xr.Dataset):
         """
+        Load the bands and compute the wanted spectral indices for pivot, child and diff.
 
         Args:
-            pivot_bands:
-            child_bands:
-            diff_bands:
-            pixel_size:
-            diff_method:
-            resampling:
-            **kwargs:
+            pivot_bands (Union[list, BandNames, str]): Wanted pivot bands
+            child_bands (Union[list, BandNames, str]): Wanted child bands
+            diff_bands (Union[list, BandNames, str]): Wanted diff bands
+            pixel_size (float): Pixel size of the returned Datasets. If not specified, use the pair's pixel size.
+            diff_method (DiffMethod): Difference method for the computation of diff_bands
+            resampling (Resampling): Resampling method
+            kwargs: Other arguments used to load bands
 
         Returns:
-            (xr.Dataset, xr.Dataset, xr.Dataset):
+            (xr.Dataset, xr.Dataset, xr.Dataset): Pivot, child and diff wanted bands as xr.Datasets
         """
         assert any(
             [pivot_bands is not None, child_bands is not None, diff_bands is not None]
@@ -275,7 +284,7 @@ class Pair(Set):
             if band not in child_bands:
                 child_bands_to_load.append(band)
 
-        # Load bands
+        # -- Load bands
         window = kwargs.pop("window", self.footprint())
 
         # Load pivot bands
@@ -283,12 +292,12 @@ class Pair(Set):
             pivot_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
         )
 
-        # Load pivot bands
+        # Load child bands
         child_ds: xr.Dataset = self.child_mosaic.load(
             child_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
         )
 
-        # Load pivot bands
+        # Load diff bands
         diff_dict = {}
         for band in diff_bands:
             diff_path, exists = self._get_out_path(
@@ -382,10 +391,10 @@ class Pair(Set):
         Stack bands and index of a pair.
 
         Args:
-            pivot_bands (list): Bands and index combination for the pivot mosaic
-            child_bands (list): Bands and index combination for the child mosaic
-            diff_bands (list): Bands and index combination for the difference between pivot and child mosaic
-            pixel_size (float): Stack pixel size. . If not specified, use the product pixel size.
+            pivot_bands (Union[list, BandNames, str]): Bands and index combination for the pivot mosaic
+            child_bands (Union[list, BandNames, str]): Bands and index combination for the child mosaic
+            diff_bands (Union[list, BandNames, str]): Bands and index combination for the difference between pivot and child mosaic
+            pixel_size (float): Stack pixel size. If not specified, use the pair's pixel size.
             stack_path (Union[str, AnyPathType]): Stack path
             save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
             **kwargs: Other arguments passed to :code:`load` or :code:`rioxarray.to_raster()` (such as :code:`compress`)
@@ -456,7 +465,9 @@ class Pair(Set):
 
         return stack
 
-    def _collocate_bands(self, bands: dict, reference: xr.DataArray = None) -> dict:
+    def _collocate_bands(
+        self, bands: dict, reference: xr.DataArray = None
+    ) -> xr.Dataset:
         """
         Collocate all bands from a dict
 
@@ -465,6 +476,6 @@ class Pair(Set):
             reference (xr.DataArray): Reference array
 
         Returns:
-            dict: Collocated bands
+            xr.Dataset: Collocated bands
         """
         return self.pivot_mosaic._collocate_bands(bands, reference)

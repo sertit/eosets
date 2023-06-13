@@ -29,7 +29,7 @@ READER = Reader()
 
 @unique
 class Alignment(ListEnum):
-    """Available alignment methods for time-series."""
+    """Available alignment methods for series."""
 
     FIRST = "first"
     """
@@ -73,15 +73,15 @@ class Series(Set):
         ruling_mosaic: Union[Mosaic, int, str] = None,
         **kwargs,
     ):
-        # Manage reference product
+        # Manage mosaics
         self.mosaics = None
         """ Pivot mosaic (unique date and contiguous). The one on which the child will be aligned. """
 
         self.id = None
-        """ ID of the pivot product """
+        """ ID of the series """
 
         self.alignment = Alignment.convert_from(alignement)[0]
-        """ Time Series alignment (on first mosaic, on last mosaic, on a hypothetical mean product). """
+        """ Series alignment (on first mosaic, on last mosaic, on a hypothetical mean product). """
 
         self.coregister = coregister
         """ Do we need to coregister the time series? """
@@ -115,14 +115,14 @@ class Series(Set):
 
     def clean_tmp(self):
         """
-        Clean the temporary directory of the current product
+        Clean the temporary directory of the current series
         """
         for mos in self.mosaics:
             mos.clean_tmp()
 
     def clear(self):
         """
-        Clear this product's cache
+        Clear this series' cache
         """
         # Delete all cached properties and functions
         for mos in self.mosaics:
@@ -155,11 +155,17 @@ class Series(Set):
         overlap_check: GeometryCheck = GeometryCheck.EXTENT,
     ) -> None:
         """
+
         Check if all the mosaics are overlapping and have the same CRS. Each mosaic of a series should have a different datetime.
         If not, throws a IncompatibleProducts error.
+        Args:
+            mosaic_paths (list): List of paths of the mosaics composing the series
+            contiguity_check (GeometryCheck): Check regarding the contiguity of the products of the mosaics
+            overlap_check (GeometryCheck): Check regarding the overlapping of the mosaics of the series
 
         Raises:
             IncompatibleProducts: Incompatible products if not contiguous or not the same date
+
         """
         # Information regarding the pair composition
         assert isinstance(mosaic_paths, list)
@@ -250,7 +256,7 @@ class Series(Set):
             self._ruling_mosaic = mosaic
 
     def read_mtd(self):
-        """"""
+        """Read the pair's metadata, but not implemented for now."""
         # TODO: how ? Just return the fields that are shared between series' components ? Or create a XML from scratch ?
         raise NotImplementedError
 
@@ -297,8 +303,20 @@ class Series(Set):
         pixel_size: float = None,
         resampling: Resampling = Resampling.bilinear,
         **kwargs,
-    ) -> (dict, dict, dict):
-        """"""
+    ) -> xr.Dataset:
+        """
+
+        Load the bands and compute the wanted spectral indices.
+
+        Args:
+            bands (Union[list, BandNames, str]): Wanted bands
+            pixel_size (float): Pixel size of the returned Dataset. If not specified, use the mosaic's pixel size.
+            resampling (Resampling): Resampling method
+            **kwargs: Other arguments used to load bands
+
+        Returns:
+            xr.Dataset: Wanted bands as xr.Datasets
+        """
         bands = to_band(bands)
 
         # Load bands

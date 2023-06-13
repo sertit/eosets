@@ -1,4 +1,4 @@
-""" Class implementing the pairs """
+""" Class implementing the mosaic object """
 import logging
 import os
 import shutil
@@ -37,7 +37,7 @@ class MosaicMethod(ListEnum):
 
 
 class Mosaic(Set):
-    """Class of mosaic, composed by several contiguous EOReader's products acquired the same day"""
+    """Class of mosaic objetcs, composed of several contiguous EOReader's products acquired the same day."""
 
     def __init__(
         self,
@@ -85,14 +85,14 @@ class Mosaic(Set):
 
     def clean_tmp(self):
         """
-        Clean the temporary directory of the current product
+        Clean the temporary directory of the current mosaic
         """
         for prod in self.get_prods():
             prod.clean_tmp()
 
     def clear(self):
         """
-        Clear this product's cache
+        Clear this mosaic's cache
         """
         # Delete all cached properties and functions
         for prod in self.get_prods():
@@ -246,7 +246,7 @@ class Mosaic(Set):
             pass
 
     def read_mtd(self):
-        """"""
+        """Read the pair's metadata, but not implemented for now."""
         # TODO: how ? Just return the fields that are shared between mosaic's components ? Or create a XML from scratch ?
         raise NotImplementedError
 
@@ -291,7 +291,8 @@ class Mosaic(Set):
 
         return extent
 
-    def get_band_suffix(self):
+    def _get_band_suffix(self):
+        """Get the band suffix"""
         return f"{self.mosaic_method.name.lower()}"
 
     def load(
@@ -300,7 +301,17 @@ class Mosaic(Set):
         pixel_size: float = None,
         **kwargs,
     ) -> xr.Dataset:
-        """"""
+        """
+        Load the bands and compute the wanted spectral indices.
+
+        Args:
+            bands (Union[list, BandNames, str]): Wanted bands
+            pixel_size (float): Pixel size of the returned Dataset. If not specified, use the mosaic's pixel size.
+            **kwargs: Other arguments used to load bands
+
+        Returns:
+            xr.Dataset: Wanted bands as xr.Datasets
+        """
         # Get merge function and extension
         merge_fct = getattr(rasters, self.mosaic_method.value)
 
@@ -309,7 +320,7 @@ class Mosaic(Set):
 
         # Get the bands to be loaded
         bands_to_load, bands_path = self.get_bands_to_load(
-            bands, self.get_band_suffix()
+            bands, self._get_band_suffix()
         )
 
         # Check validity of the bands
