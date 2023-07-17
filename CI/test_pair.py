@@ -7,6 +7,7 @@ from eoreader.bands import RED
 from sertit import ci
 
 from CI.scripts_utils import data_folder, pair_folder
+from eosets.exceptions import IncompatibleProducts
 from eosets.pair import Pair
 
 ci.reduce_verbosity()
@@ -26,7 +27,7 @@ def _test_core(paths):
         pair = Pair(**paths)
         pair.output = os.path.join(output, pair.condensed_name)
 
-        # TODO: check with input mosaic, check extent, footprint, check not overlapping products, check child-pivot
+        # TODO: check with input mosaic, check extent, footprint, check child-pivot
 
         # Stack with a pixel_size of 60m
         pair_out = pair.output / "red_stack.tif"
@@ -91,3 +92,20 @@ def test_l8_pair():
         "child_paths": [data_folder() / "LC08_L1TP_202032_20200929_20201006_02_T1.tar"],
     }
     _test_core(l8_paths)
+
+
+def test_pair_fail():
+    paths = {
+        "pivot_paths": [
+            data_folder()
+            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
+        ],
+        "child_paths": [
+            data_folder()
+            / "S2B_MSIL2A_20220228T102849_N0400_R108_T32ULU_20220228T134712.SAFE"
+        ],
+    }
+
+    # Fails with not overlapping products
+    with pytest.raises(IncompatibleProducts):
+        Pair(**paths)

@@ -48,7 +48,7 @@ def test_s2_mosaic():
         mosaic = Mosaic([s2_32ulv, s2_32ulu], mosaic_method="VRT")
         mosaic.output = os.path.join(output, mosaic.condensed_name)
 
-        # TODO: check extent, footprint, check footprint
+        # TODO: check extent, footprint
 
         # Stack with a pixel_size of 600m
         mosaic_out = mosaic.output / "red_stack.tif"

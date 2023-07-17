@@ -8,6 +8,7 @@ from sertit import ci
 
 from CI.scripts_utils import data_folder, series_folder
 from eosets import Series
+from eosets.exceptions import IncompatibleProducts
 
 ci.reduce_verbosity()
 
@@ -35,11 +36,27 @@ def test_s2_series():
         if ON_DISK:
             output = r"/mnt/ds2_db3/CI/eosets/SERIES"
 
+        # Try with same datetime
+        with pytest.raises(IncompatibleProducts):
+            Series([s2_paths[0], s2_paths[0]])
+
+        # Try with non-overlapping products
+        with pytest.raises(IncompatibleProducts):
+            Series(
+                [
+                    s2_paths[0],
+                    [
+                        data_folder()
+                        / "S2B_MSIL2A_20220228T102849_N0400_R108_T32ULU_20220228T134712.SAFE"
+                    ],
+                ]
+            )
+
         # Create object
         series = Series(paths=s2_paths)
         series.output = os.path.join(output, series.condensed_name)
 
-        # TODO: check with input mosaic, footprint, check extent, same datetime, not overlapping mos, different ruling mosaic
+        # TODO: check with input mosaic, footprint, check extent, different ruling mosaic
 
         # Stack with a pixel_size of 60m
         series_path = series.output / "red_stack.tif"

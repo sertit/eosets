@@ -379,7 +379,11 @@ class Set:
         xr_name = "_".join(long_name)
         attr_name = " ".join(long_name)
 
-        xarr = xarr.rename(xr_name)
+        try:
+            xarr = xarr.rename(xr_name)
+        except ValueError:
+            pass
+
         xarr.attrs["long_name"] = attr_name
         xarr.attrs["condensed_name"] = self.condensed_name
 
