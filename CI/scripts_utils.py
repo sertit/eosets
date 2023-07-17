@@ -106,13 +106,13 @@ def pair_folder() -> AnyPathType:
     return get_ci_db_dir() / "PAIR"
 
 
-def compare_geom(geom_type: str, obj: Any, on_disk: bool):
+def compare_geom(geom_type: str, obj: Any, obj_folder: AnyPathType, on_disk: bool):
     # Check extent
     geom_out = obj.output / f"{geom_type}.geojson"
     if on_disk:
         geom_ci_path = geom_out
     else:
-        geom_ci_path = mosaic_folder() / obj.condensed_name / geom_out.name
+        geom_ci_path = obj_folder / obj.condensed_name / geom_out.name
 
     getattr(obj, geom_type)().to_file(geom_out)
 

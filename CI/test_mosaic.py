@@ -50,10 +50,10 @@ def test_s2_mosaic():
         mosaic.output = os.path.join(output, mosaic.condensed_name)
 
         # Check extent
-        compare_geom("extent", mosaic, ON_DISK)
+        compare_geom("extent", mosaic, mosaic_folder(), ON_DISK)
 
         # Check footprint
-        compare_geom("footprint", mosaic, ON_DISK)
+        compare_geom("footprint", mosaic, mosaic_folder(), ON_DISK)
 
         # Stack with a pixel_size of 600m
         mosaic_out = mosaic.output / "red_stack.tif"

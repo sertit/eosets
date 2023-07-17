@@ -34,10 +34,10 @@ def _test_pair_core(paths: dict) -> None:
         pair.output = os.path.join(output, pair.condensed_name)
 
         # Check extent
-        compare_geom("extent", pair, ON_DISK)
+        compare_geom("extent", pair, pair_folder(), ON_DISK)
 
         # Check footprint
-        compare_geom("footprint", pair, ON_DISK)
+        compare_geom("footprint", pair, pair_folder(), ON_DISK)
 
         # TODO: check with input mosaic, check child-pivot
 

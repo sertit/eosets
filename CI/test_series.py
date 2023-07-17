@@ -54,10 +54,10 @@ def test_s2_series():
         series.output = os.path.join(output, series.condensed_name)
 
         # Check extent
-        compare_geom("extent", series, ON_DISK)
+        compare_geom("extent", series, series_folder(), ON_DISK)
 
         # Check footprint
-        compare_geom("footprint", series, ON_DISK)
+        compare_geom("footprint", series, series_folder(), ON_DISK)
 
         # TODO: check with input mosaic, different ruling mosaic
 
