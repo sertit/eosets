@@ -274,7 +274,7 @@ class Mosaic(Set):
                 )
 
             # Dissolve and explode the footprint
-            footprint = footprint.dissolve().explode()
+            footprint = footprint.dissolve().explode(index_parts=True)
 
         return footprint
 
@@ -297,7 +297,7 @@ class Mosaic(Set):
                 )
 
             # Dissolve and explode the extent
-            extent = extent.dissolve().explode()
+            extent = extent.dissolve().explode(index_parts=True)
 
         return extent
 
