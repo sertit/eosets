@@ -368,6 +368,9 @@ class Series(Set):
         # Make sure the dataset has the bands in the right order -> re-order the input dict
         series_ds = xr.merge([xr.merge(arr_dict[band]) for band in bands])
 
+        # Update attributes
+        series_ds = self._update_xds_attrs(series_ds, bands)
+
         return series_ds
 
     def stack(

@@ -2,6 +2,7 @@
 import os
 import tempfile
 
+import pytest
 from eoreader.bands import RED
 from sertit import ci
 
@@ -34,11 +35,15 @@ def test_s2_series():
         if ON_DISK:
             output = r"/mnt/ds2_db3/CI/eosets/SERIES"
 
+        # Create object
         series = Series(paths=s2_paths)
         series.output = os.path.join(output, series.condensed_name)
 
-        # %%
+        # TODO: check with input mosaic, footprint, check extent, same datetime, not overlapping mos, different ruling mosaic
+
+        # Stack with a pixel_size of 60m
         series_path = series.output / "red_stack.tif"
+        assert series.has_bands(RED)
         series.stack(RED, window=aoi_path, pixel_size=60, stack_path=series_path)
 
         # Test it
@@ -48,3 +53,11 @@ def test_s2_series():
             ci_path = series_folder() / series.condensed_name / "red_stack.tif"
 
         ci.assert_raster_equal(series_path, ci_path)
+
+        # Not implemented
+        with pytest.raises(NotImplementedError):
+            series.read_mtd()
+
+        # Clean everything
+        series.clear()
+        series.clean_tmp()

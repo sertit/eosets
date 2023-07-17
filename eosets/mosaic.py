@@ -392,7 +392,12 @@ class Mosaic(Set):
             coords = merged_dict[bands[0]].coords
 
         # Make sure the dataset has the bands in the right order -> re-order the input dict
-        return xr.Dataset({key: merged_dict[key] for key in bands}, coords=coords)
+        mos_ds = xr.Dataset({key: merged_dict[key] for key in bands}, coords=coords)
+
+        # Update attributes
+        mos_ds = self._update_xds_attrs(mos_ds, bands)
+
+        return mos_ds
 
     def stack(
         self,

@@ -355,6 +355,11 @@ class Pair(Set):
         # Make sure the dataset has the bands in the right order -> re-order the input dict
         diff_ds = xr.Dataset({key: diff_dict[key] for key in diff_bands}, coords=coords)
 
+        # Update attributes
+        pivot_ds = self._update_xds_attrs(pivot_ds, pivot_bands)
+        child_ds = self._update_xds_attrs(child_ds, child_bands)
+        diff_ds = self._update_xds_attrs(diff_ds, diff_bands)
+
         return pivot_ds, child_ds, diff_ds
 
     def _update_attrs_constellation_specific(

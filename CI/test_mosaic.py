@@ -44,12 +44,15 @@ def test_s2_mosaic():
                 [s2_32umu, s2_32ulu], output_path=output, mosaic_method="VRT"
             )
 
-        # Then with compatible
+        # Create object
         mosaic = Mosaic([s2_32ulv, s2_32ulu], mosaic_method="VRT")
         mosaic.output = os.path.join(output, mosaic.condensed_name)
 
-        # Stack with a pixel_size of 60m
+        # TODO: check extent, footprint, check footprint
+
+        # Stack with a pixel_size of 600m
         mosaic_out = mosaic.output / "red_stack.tif"
+        assert mosaic.has_bands(RED)
         mosaic.stack(
             [RED],
             stack_path=mosaic_out,
@@ -63,3 +66,11 @@ def test_s2_mosaic():
             ci_path = mosaic_folder() / mosaic.condensed_name / "red_stack.tif"
 
         ci.assert_raster_equal(mosaic_out, ci_path)
+
+        # Not implemented
+        with pytest.raises(NotImplementedError):
+            mosaic.read_mtd()
+
+        # Clean everything
+        mosaic.clear()
+        mosaic.clean_tmp()

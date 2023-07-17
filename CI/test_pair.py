@@ -2,6 +2,7 @@
 import os
 import tempfile
 
+import pytest
 from eoreader.bands import RED
 from sertit import ci
 
@@ -21,11 +22,15 @@ def _test_core(paths):
         if ON_DISK:
             output = r"/mnt/ds2_db3/CI/eosets/PAIR"
 
+        # Create object
         pair = Pair(**paths)
         pair.output = os.path.join(output, pair.condensed_name)
 
-        # Stack
+        # TODO: check with input mosaic, check extent, footprint, check not overlapping products, check child-pivot
+
+        # Stack with a pixel_size of 60m
         pair_out = pair.output / "red_stack.tif"
+        assert pair.has_bands(RED)
         pair.stack(
             pivot_bands=RED,
             child_bands=RED,
@@ -42,6 +47,14 @@ def _test_core(paths):
             ci_path = pair_folder() / pair.condensed_name / "red_stack.tif"
 
         ci.assert_raster_equal(pair_out, ci_path)
+
+        # Not implemented
+        with pytest.raises(NotImplementedError):
+            pair.read_mtd()
+
+        # Clean everything
+        pair.clear()
+        pair.clean_tmp()
 
 
 def test_s2_pair():
