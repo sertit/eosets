@@ -6,7 +6,7 @@ import pytest
 from eoreader.bands import RED
 from sertit import ci
 
-from CI.scripts_utils import data_folder, series_folder
+from CI.scripts_utils import compare_geom, data_folder, series_folder
 from eosets import Series
 from eosets.exceptions import IncompatibleProducts
 
@@ -16,10 +16,7 @@ ON_DISK = False
 
 
 def test_s2_series():
-    import rasterio
-
-    print(rasterio.__version__)
-
+    """Test series object with Sentinel-2 products"""
     s2_paths = [
         [
             data_folder()
@@ -56,7 +53,13 @@ def test_s2_series():
         series = Series(paths=s2_paths)
         series.output = os.path.join(output, series.condensed_name)
 
-        # TODO: check with input mosaic, footprint, check extent, different ruling mosaic
+        # Check extent
+        compare_geom("extent", series, ON_DISK)
+
+        # Check footprint
+        compare_geom("footprint", series, ON_DISK)
+
+        # TODO: check with input mosaic, different ruling mosaic
 
         # Stack with a pixel_size of 60m
         series_path = series.output / "red_stack.tif"

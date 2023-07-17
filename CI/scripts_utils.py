@@ -1,6 +1,7 @@
 """ Utils module for scripts """
 import logging
 import os
+from typing import Any
 
 from cloudpathlib import AnyPath
 from eoreader.reader import Reader
@@ -103,3 +104,20 @@ def mosaic_folder() -> AnyPathType:
 
 def pair_folder() -> AnyPathType:
     return get_ci_db_dir() / "PAIR"
+
+
+def compare_geom(geom_type: str, obj: Any, on_disk: bool):
+    # Check extent
+    geom_out = obj.output / f"{geom_type}.geojson"
+    if on_disk:
+        geom_ci_path = geom_out
+    else:
+        geom_ci_path = mosaic_folder() / obj.condensed_name / geom_out.name
+
+    getattr(obj, geom_type)().to_file(geom_out)
+
+    try:
+        ci.assert_geom_equal(geom_ci_path, geom_out)
+    except AssertionError:
+        LOGGER.warning("Extent not equal, trying almost equal.")
+        ci.assert_geom_almost_equal(geom_ci_path, geom_out)

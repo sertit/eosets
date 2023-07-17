@@ -135,6 +135,9 @@ class Mosaic(Set):
         # Remove EOReader tmp, the mosaic will save files in its tmp when needed
         remove_tmp = True
 
+        # Nof prods (before checks)
+        self.nof_prods = len(paths)
+
         # Open first product as a reference
         first_prod: Product = READER.open(
             paths[0],
@@ -163,13 +166,11 @@ class Mosaic(Set):
                 )
 
             # Ensure compatibility of the mosaic component, i.e. unique date and contiguous product
-            self.check_compatibility(first_prod, prod)
             self.prods[prod.condensed_name] = prod
-
+            self.check_compatibility(first_prod, prod)
         self.check_contiguity(contiguity_check)
 
         # Create full_name
-        self.nof_prods = len(self.get_prods())
         self.date = kwargs.pop("date", first_prod.date)
         self.datetime = kwargs.pop("datetime", first_prod.datetime)
         self.full_name = (
@@ -268,7 +269,9 @@ class Mosaic(Set):
 
         if self.nof_prods > 1:
             for prod in self.get_prods()[1:]:
-                footprint = footprint.overlay(prod.footprint().to_crs(ref_prod.crs()))
+                footprint = footprint.overlay(
+                    prod.footprint().to_crs(ref_prod.crs()), how="union"
+                )
 
             # Dissolve and explode the footprint
             footprint = footprint.dissolve().explode()
@@ -289,7 +292,9 @@ class Mosaic(Set):
 
         if self.nof_prods > 1:
             for prod in self.get_prods()[1:]:
-                extent = extent.overlay(prod.extent().to_crs(ref_prod.crs()))
+                extent = extent.overlay(
+                    prod.extent().to_crs(ref_prod.crs()), how="union"
+                )
 
             # Dissolve and explode the extent
             extent = extent.dissolve().explode()
