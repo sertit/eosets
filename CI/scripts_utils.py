@@ -6,7 +6,8 @@ from cloudpathlib import AnyPath
 from eoreader.reader import Reader
 from sertit import ci
 
-from eosets.utils import EOSETS_NAME, AnyPathType
+from eosets import EOSETS_NAME
+from eosets.utils import AnyPathType
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 READER = Reader()
@@ -45,22 +46,6 @@ def get_ci_db_dir() -> AnyPathType:
                 raise NotADirectoryError("Impossible to find get_ci_db_dir")
 
             return path
-
-
-def get_ci_data_dir() -> AnyPathType:
-    """
-    Get CI DATA directory (S3 bucket)
-    Returns:
-        AnyPathType: CI DATA directory
-    """
-    if len(os.getenv(ci.AWS_ACCESS_KEY_ID, "")) > 0:
-        return get_ci_db_dir().joinpath("DATA")
-    else:
-        return get_ci_dir().joinpath("DATA")
-
-
-def data_path():
-    return get_ci_db_dir().joinpath("DATA")
 
 
 def get_db_dir_on_disk() -> AnyPathType:
@@ -102,3 +87,19 @@ def get_db_dir() -> AnyPathType:
         db_dir = get_db_dir_on_disk()
 
     return db_dir
+
+
+def data_folder() -> AnyPathType:
+    return get_ci_db_dir() / "DATA"
+
+
+def series_folder() -> AnyPathType:
+    return get_ci_db_dir() / "SERIES"
+
+
+def mosaic_folder() -> AnyPathType:
+    return get_ci_db_dir() / "MOSAIC"
+
+
+def pair_folder() -> AnyPathType:
+    return get_ci_db_dir() / "PAIR"

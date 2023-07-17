@@ -19,9 +19,10 @@ from eoreader.utils import UINT16_NODATA
 from sertit import rasters
 from sertit.misc import ListEnum
 
+from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.set import GeometryCheck, Set
-from eosets.utils import EOSETS_NAME, AnyPathType
+from eosets.utils import AnyPathType
 
 READER = Reader()
 
@@ -103,7 +104,11 @@ class Mosaic(Set):
         Manage the output specifically for this child class
         """
         for prod in self.get_prods():
-            prod.output = self._get_tmp_folder(writable=True)
+            try:
+                prod.output = self._get_tmp_folder(writable=True)
+            except FileNotFoundError:
+                # Never mind for non-existing files: they have already been copied :)
+                pass
 
     def _manage_prods(
         self,

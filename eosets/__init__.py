@@ -13,3 +13,11 @@ from .__meta__ import (
     __url__,
     __version__,
 )
+
+EOSETS_NAME = "eosets"
+
+__all__ = ["Mosaic", "Pair", "Series"]
+
+from .mosaic import Mosaic
+from .pair import Pair
+from .series import Series

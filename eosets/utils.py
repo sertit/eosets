@@ -5,8 +5,6 @@ from typing import Union
 from cloudpathlib import CloudPath
 from eoreader import utils
 
-EOSETS_NAME = "eosets"
-
 AnyPathType = Union[CloudPath, Path]
 
 read = utils.read

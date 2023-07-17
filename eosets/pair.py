@@ -15,11 +15,11 @@ from rasterio.enums import Resampling
 from sertit import rasters
 from sertit.misc import ListEnum
 
-from eosets import utils
+from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 from eosets.set import GeometryCheck, Set
-from eosets.utils import EOSETS_NAME, AnyPathType
+from eosets.utils import AnyPathType, read, stack_dict, write
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 
@@ -109,8 +109,12 @@ class Pair(Set):
         """
         Manage the output specifically for this child class
         """
-        self.pivot_mosaic._manage_output()
-        self.child_mosaic._manage_output()
+        self.pivot_mosaic.output = self.output
+        try:
+            self.child_mosaic.output = self.output
+        except FileNotFoundError:
+            # Never mind for non-existing files: they have already been copied :)
+            pass
 
     def get_prods(self) -> list:
         """
@@ -129,7 +133,7 @@ class Pair(Set):
         overlap_check: GeometryCheck = GeometryCheck.EXTENT,
     ) -> None:
         """
-        Check if the pivot and child mosaics are overlapping and if their CRS are the same.
+        Check if the pivot and child mosaics are overlapping.
 
         TODO: check if same constellation ?
 
@@ -171,14 +175,7 @@ class Pair(Set):
                 )
             self.child_id: str = self.child_mosaic.id
 
-            # Make the checks
-            # CRS
-            if self.pivot_mosaic.crs != self.child_mosaic.crs:
-                raise IncompatibleProducts(
-                    f"Pivot and child mosaics should have the same CRS! {self.pivot_mosaic.crs=} != {self.child_mosaic.crs=}"
-                )
-
-            # Geometry
+            # Check Geometry
             if overlap_check != GeometryCheck.NONE:
                 pivot_geom: gpd.GeoDataFrame = getattr(
                     self.pivot_mosaic, str(overlap_check.value)
@@ -304,7 +301,7 @@ class Pair(Set):
                 f"{self.condensed_name}_{to_str(band)[0]}.tif"
             )
             if exists:
-                diff_arr = utils.read(
+                diff_arr = read(
                     path=diff_path,
                     pixel_size=pixel_size,
                     resampling=resampling,
@@ -335,7 +332,7 @@ class Pair(Set):
                 diff_arr.attrs["long_name"] = diff_name
 
                 # Write on disk
-                utils.write(diff_arr, diff_path)
+                write(diff_arr, diff_path)
 
             diff_dict[band] = diff_arr
 
@@ -421,7 +418,7 @@ class Pair(Set):
         if stack_path:
             stack_path = AnyPath(stack_path)
             if stack_path.is_file():
-                return utils.read(stack_path, pixel_size=pixel_size)
+                return read(stack_path, pixel_size=pixel_size)
             else:
                 os.makedirs(str(stack_path.parent), exist_ok=True)
 
@@ -431,9 +428,9 @@ class Pair(Set):
         )
 
         # Rename bands
-        pivot_band_mapping = {band: f"Pivot_{band}" for band in pivot_bands}
-        child_band_mapping = {band: f"Child_{band}" for band in child_bands}
-        diff_band_mapping = {band: f"d{band}" for band in diff_bands}
+        pivot_band_mapping = {band: f"Pivot_{to_str(band)[0]}" for band in pivot_bands}
+        child_band_mapping = {band: f"Child_{to_str(band)[0]}" for band in child_bands}
+        diff_band_mapping = {band: f"d{to_str(band)[0]}" for band in diff_bands}
         all_bands = (
             list(pivot_band_mapping.values())
             + list(child_band_mapping.values())
@@ -451,9 +448,7 @@ class Pair(Set):
             nodata = kwargs.get("nodata", UINT16_NODATA)
         else:
             nodata = kwargs.get("nodata", self.nodata)
-        stack, dtype = utils.stack_dict(
-            all_bands, band_ds, save_as_int, nodata, **kwargs
-        )
+        stack, dtype = stack_dict(all_bands, band_ds, save_as_int, nodata, **kwargs)
 
         # Update stack's attributes
         stack = self._update_attrs(stack, all_bands, **kwargs)
@@ -461,7 +456,7 @@ class Pair(Set):
         # Write on disk
         if stack_path:
             LOGGER.debug("Saving stack")
-            utils.write(stack, stack_path, dtype=dtype, **kwargs)
+            write(stack, stack_path, dtype=dtype, **kwargs)
 
         return stack
 

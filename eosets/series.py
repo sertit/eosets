@@ -17,11 +17,11 @@ from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
 from sertit.misc import ListEnum
 
-from eosets import utils
+from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 from eosets.set import GeometryCheck, Set
-from eosets.utils import EOSETS_NAME, AnyPathType
+from eosets.utils import AnyPathType, read, stack_dict, write
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 READER = Reader()
@@ -133,7 +133,7 @@ class Series(Set):
         Manage the output specifically for this child class
         """
         for mos in self.mosaics:
-            mos._manage_output()
+            mos.output = self.output
 
     def get_prods(self) -> list:
         """
@@ -191,14 +191,7 @@ class Series(Set):
                     "All mosaics of a series should have a different datetime! If not, please regroup them in a unique mosaic."
                 )
 
-        # Make the checks
-        # CRS
-        if any(self.ruling_mosaic.crs != mos.crs for mos in self.mosaics):
-            raise IncompatibleProducts(
-                f"All mosaics should have the same CRS! (All mosaics should be aligned on {self.ruling_mosaic.crs=})"
-            )
-
-        # Geometry
+        # Check geometry
         if overlap_check != GeometryCheck.NONE:
             ruling_geom: gpd.GeoDataFrame = getattr(
                 self.ruling_mosaic, str(overlap_check.value)
@@ -406,7 +399,7 @@ class Series(Set):
         if stack_path:
             stack_path = AnyPath(stack_path)
             if stack_path.is_file():
-                return utils.read(stack_path, pixel_size=pixel_size)
+                return read(stack_path, pixel_size=pixel_size)
             else:
                 os.makedirs(str(stack_path.parent), exist_ok=True)
 
@@ -415,30 +408,30 @@ class Series(Set):
 
         # Rename bands and remove time variable
         coords = {"x": band_ds.x, "y": band_ds.y, "band": 1}
-        stack_dict = {}
+        stk_dict = {}
         for band in bands:
             for idx, dt in enumerate(band_ds.time.values):
-                stack_dict[
+                stk_dict[
                     f"{np.datetime_as_string(dt, unit='s')}_{to_str(band)[0]}"
                 ] = band_ds[band].sel(time=dt, drop=True)
 
         # Create a dataset correctly formatted for stacking
-        stack_ds = xr.Dataset(stack_dict, coords=coords)
+        stack_ds = xr.Dataset(stk_dict, coords=coords)
 
         # Stack bands
         if save_as_int:
             nodata = kwargs.get("nodata", UINT16_NODATA)
         else:
             nodata = kwargs.get("nodata", self.nodata)
-        stack, dtype = utils.stack_dict(bands, stack_ds, save_as_int, nodata, **kwargs)
+        stack, dtype = stack_dict(bands, stack_ds, save_as_int, nodata, **kwargs)
 
         # Update stack's attributes
-        stack = self._update_attrs(stack, list(stack_dict.keys()), **kwargs)
+        stack = self._update_attrs(stack, list(stk_dict.keys()), **kwargs)
 
         # Write on disk
         if stack_path:
             LOGGER.debug("Saving stack")
-            utils.write(stack, stack_path, dtype=dtype, **kwargs)
+            write(stack, stack_path, dtype=dtype, **kwargs)
 
         return stack
 

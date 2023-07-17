@@ -14,8 +14,9 @@ from eoreader.products import Product
 from sertit import files
 from sertit.misc import ListEnum
 
+from eosets import EOSETS_NAME
 from eosets.env_vars import CI_EOSETS_BAND_FOLDER
-from eosets.utils import EOSETS_NAME, AnyPathType
+from eosets.utils import AnyPathType
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 
@@ -72,9 +73,6 @@ class Set:
             self._tmp_output = tempfile.TemporaryDirectory()
             self._output = AnyPath(self._tmp_output.name)
 
-        self._tmp_process = self.output.joinpath("tmp")
-        os.makedirs(self._tmp_process, exist_ok=True)
-
         self.id: str = id
         """ ID of the reference product, given by the creator of the mosaic. If not, a mix based on the dates and constellations of its components. """
 
@@ -100,6 +98,9 @@ class Set:
 
         self.nof_prods: int = 0
         """ Number of products. """
+
+        # Set tmp process
+        self._set_tmp_process()
 
     @abstractmethod
     def clean_tmp(self):
@@ -144,6 +145,16 @@ class Set:
         """
         return self._output
 
+    def _set_tmp_process(self):
+        """Set temporary folder avoiding recursive tmps."""
+        if self._output.name == "tmp":
+            # Avoid nested "tmp" folders
+            self._tmp_process = self._output
+        else:
+            self._tmp_process = self._output.joinpath("tmp")
+
+        os.makedirs(self._tmp_process, exist_ok=True)
+
     @output.setter
     def output(self, value: Union[str, AnyPathType]) -> None:
         """
@@ -159,10 +170,9 @@ class Set:
 
         # Create temporary process folder
         old_tmp_process = self._tmp_process
-        self._tmp_process = self._output.joinpath("tmp")
-        os.makedirs(self._tmp_process, exist_ok=True)
+        self._set_tmp_process()
 
-        # Update for prods
+        # Update for every sets
         self._manage_output()
 
         # Move all files from old process folder into the new one
