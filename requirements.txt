@@ -1,5 +1,4 @@
 # Tests & lint
-tox
 pre-commit
 black
 pytest
@@ -12,6 +11,37 @@ tempenv
 # Deploy
 twine
 
+# Formats
+lxml
+zarr
+h5netcdf
+dicttoxml
+
+# Paths
+validators
+cloudpathlib>=0.10.0
+
+# Raster libs
+scipy
+pyresample
+rasterio>=1.3.8
+xarray>=0.18.0
+rioxarray>=0.10.0
+
+# Vector libs
+rtree
+geopandas>=0.11.0
+
+# Spectral indices
+spyndex>=0.3.0
+
+# Optimizations
+dask[complete]>=2021.10.0
+methodtools
+
+# Plot
+matplotlib
+
 # Sertit libs
 eoreader>=0.20.0
-sertit[full] >= 1.26.0
+sertit[full] >= 1.27.3
