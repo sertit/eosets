@@ -1,9 +1,6 @@
 stages:
   - lint
   - test
-  - weekly_tests
-  - publish
-  - docs
 
 variables:
   EEO_DEPS: $REGISTRY_GITLAB/extracteo/extracteo_deps
@@ -87,32 +84,3 @@ pytest_s3:
         - .gitlab-ci.yml
         - pytest.ini
   needs: [ "lint" ]
-
-
-upload_wheel:linux:
-  image: python:3.9-buster
-  stage: publish
-  script:
-    - pip install twine
-    - python setup.py sdist bdist_wheel
-    - TWINE_PASSWORD=${GITLAB_RW_TOKEN_PWD} TWINE_USERNAME=${GITLAB_RW_TOKEN_NAME} python -m twine upload --config-file ./.pypirc -r gitlab dist/*
-  tags:
-    - sertit
-    - linux
-  only:
-    - tags
-
-pages:
-  image: $EO_CONTAINER:3.9
-  stage: docs
-  script:
-    - python -m pip install --upgrade pip
-    - pip install -r requirements-doc.txt
-    - sphinx-build docs docs/_build/html
-    - mv docs/_build/html public/
-  artifacts:
-    paths:
-      - public
-  tags:
-    - sertit
-    - linux
