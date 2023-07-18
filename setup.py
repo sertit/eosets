@@ -25,9 +25,9 @@ setuptools.setup(
     long_description=readme,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    install_requires=["eoreader>0.19.4", "sertit[full]>=1.26.0"],
+    install_requires=["eoreader>0.20.0", "sertit[full]>=1.27.3"],
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
