@@ -127,7 +127,6 @@ html_theme_options = {
     "repository_url": eosets.__url__,
     "repository_branch": "master",
     "path_to_docs": "docs",
-
     "repository_provider": "custom"
 }
 
