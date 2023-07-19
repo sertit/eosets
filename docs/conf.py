@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 import eosets
 
 # -- General configuration ------------------------------------------------
@@ -45,6 +46,10 @@ autodoc_default_options = {
 nb_execution_mode = "cache"
 nb_execution_timeout = -1
 
+# Manage new READTHEDOCS output mechanism
+cache_path = os.getenv('READTHEDOCS_OUTPUT')
+if cache_path is not None:
+    nb_execution_cache_path = f"{cache_path}/../docs/_build/.jupyter_cache"
 # Merge stderr and stdout
 nb_merge_streams = True
 
