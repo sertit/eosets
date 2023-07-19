@@ -31,6 +31,6 @@
    :hidden:
 
    history
-   GitLab Repository <https://git.unistra.fr/sertit/libraries/eosets>
+   Github Repository <https://github.com/sertit/eosets>
 ```
 
