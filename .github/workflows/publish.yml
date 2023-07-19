@@ -32,7 +32,7 @@ jobs:
 
       - name: Build a binary wheel and a source tarball
         run: |
-          python -m pip install setuptools wheel methodtools .
+          python -m pip install setuptools wheel methodtools
           python setup.py sdist bdist_wheel
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

@@ -34,6 +34,10 @@ EOSETS_NAME = "eosets"
 
 __all__ = ["Mosaic", "Pair", "Series"]
 
-from .mosaic import Mosaic
-from .pair import Pair
-from .series import Series
+try:
+    from .mosaic import Mosaic
+    from .pair import Pair
+    from .series import Series
+except (ModuleNotFoundError, ImportError):
+    # Don't fail for check with empty environment
+    pass
