@@ -93,6 +93,8 @@ class Pair(Set):
         )
 
         # Update mosaics of the pair
+        if child_paths is None:
+            child_paths = []
         self._manage_mosaics(pivot_paths, child_paths, contiguity_check, overlap_check)
 
         # Fill attributes
@@ -111,7 +113,9 @@ class Pair(Set):
         Clean the temporary directory of the current pair
         """
         self.pivot_mosaic.clean_tmp()
-        self.child_mosaic.clean_tmp()
+
+        if self.has_child:
+            self.child_mosaic.clean_tmp()
 
     def clear(self):
         """
@@ -119,7 +123,9 @@ class Pair(Set):
         """
         # Delete all cached properties and functions
         self.pivot_mosaic.clear()
-        self.child_mosaic.clear()
+
+        if self.has_child:
+            self.child_mosaic.clear()
 
     def _manage_output(self):
         """
@@ -127,7 +133,8 @@ class Pair(Set):
         """
         self.pivot_mosaic.output = self.output
         try:
-            self.child_mosaic.output = self.output
+            if self.has_child:
+                self.child_mosaic.output = self.output
         except FileNotFoundError:
             # Never mind for non-existing files: they have already been copied :)
             pass
@@ -139,7 +146,11 @@ class Pair(Set):
         Returns:
             list: Products list
         """
-        return self.pivot_mosaic.get_prods() + self.child_mosaic.get_prods()
+        prods = self.pivot_mosaic.get_prods()
+
+        if self.has_child:
+            prods += self.child_mosaic.get_prods()
+        return prods
 
     def _manage_mosaics(
         self,
@@ -222,10 +233,15 @@ class Pair(Set):
             gpd.GeoDataFrame: Footprint of the pair
         """
         pivot_geom: gpd.GeoDataFrame = self.pivot_mosaic.footprint()
-        child_geom: gpd.GeoDataFrame = self.child_mosaic.footprint().to_crs(
-            self.pivot_mosaic.crs
-        )
-        footprint = pivot_geom.overlay(child_geom, "intersection")
+
+        if self.has_child:
+            child_geom: gpd.GeoDataFrame = self.child_mosaic.footprint().to_crs(
+                self.pivot_mosaic.crs
+            )
+            footprint = pivot_geom.overlay(child_geom, "intersection")
+        else:
+            footprint = pivot_geom
+
         return footprint
 
     @cache
@@ -238,10 +254,14 @@ class Pair(Set):
 
         """
         pivot_geom: gpd.GeoDataFrame = self.pivot_mosaic.extent()
-        child_geom: gpd.GeoDataFrame = self.child_mosaic.extent().to_crs(
-            self.pivot_mosaic.crs
-        )
-        extent = pivot_geom.overlay(child_geom, "intersection")
+
+        if self.has_child:
+            child_geom: gpd.GeoDataFrame = self.child_mosaic.extent().to_crs(
+                self.pivot_mosaic.crs
+            )
+            extent = pivot_geom.overlay(child_geom, "intersection")
+        else:
+            extent = pivot_geom
         return extent
 
     def load(
@@ -305,76 +325,84 @@ class Pair(Set):
             pivot_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
         )
 
-        # Load child bands
-        child_ds: xr.Dataset = self.child_mosaic.load(
-            child_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
-        )
-
-        # Load diff bands
-        diff_dict = {}
-        for band in diff_bands:
-            diff_path, exists = self._get_out_path(
-                f"{self.condensed_name}_{to_str(band)[0]}.tif"
-            )
-            if exists:
-                diff_arr = read(
-                    path=diff_path,
-                    pixel_size=pixel_size,
-                    resampling=resampling,
-                    **kwargs,
-                )
-            else:
-                f"*** Loading d{to_str(band)} for {self.condensed_name} ***"
-                pivot_arr = pivot_ds[band]
-                child_arr = child_ds[band]
-
-                # To be sure, always collocate arrays, even if the size is the same
-                # Indeed, a small difference in the coordinates will lead to empy arrays
-                # So the bands MUST BE exactly aligned
-                child_arr = child_arr.rio.reproject_match(
-                    pivot_arr, resampling=resampling, **kwargs
-                )
-
-                # Nans are conserved with +/-
-                # So only the overlapping extent WITH nodata of both pivot and child is loaded
-                if diff_method == DiffMethod.PIVOT_CHILD:
-                    diff_arr = pivot_arr - child_arr
-                else:
-                    diff_arr = child_arr - pivot_arr
-
-                # Save diff band
-                diff_name = f"d{to_str(band)[0]}"
-                diff_arr = pivot_arr.copy(data=diff_arr).rename(diff_name)
-                diff_arr.attrs["long_name"] = diff_name
-
-                # Write on disk
-                write(diff_arr, diff_path)
-
-            diff_dict[band] = diff_arr
-
-        # Collocate diff bands
-        diff_dict = self._collocate_bands(diff_dict)
-
-        # Drop not wanted bands from pivot and child datasets
         pivot_ds = pivot_ds.drop_vars(
             [band for band in pivot_ds.keys() if band not in pivot_bands]
         )
-        child_ds = child_ds.drop_vars(
-            [band for band in child_ds.keys() if band not in child_bands]
-        )
 
-        # Create diff dataset
-        coords = None
-        if diff_dict:
-            coords = diff_dict[diff_bands[0]].coords
-
-        # Make sure the dataset has the bands in the right order -> re-order the input dict
-        diff_ds = xr.Dataset({key: diff_dict[key] for key in diff_bands}, coords=coords)
-
-        # Update attributes
         pivot_ds = self._update_xds_attrs(pivot_ds, pivot_bands)
-        child_ds = self._update_xds_attrs(child_ds, child_bands)
-        diff_ds = self._update_xds_attrs(diff_ds, diff_bands)
+
+        # Load child bands
+        if self.has_child:
+            child_ds: xr.Dataset = self.child_mosaic.load(
+                child_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
+            )
+
+            # Load diff bands
+            diff_dict = {}
+            for band in diff_bands:
+                diff_path, exists = self._get_out_path(
+                    f"{self.condensed_name}_{to_str(band)[0]}.tif"
+                )
+                if exists:
+                    diff_arr = read(
+                        path=diff_path,
+                        pixel_size=pixel_size,
+                        resampling=resampling,
+                        **kwargs,
+                    )
+                else:
+                    f"*** Loading d{to_str(band)} for {self.condensed_name} ***"
+                    pivot_arr = pivot_ds[band]
+                    child_arr = child_ds[band]
+
+                    # To be sure, always collocate arrays, even if the size is the same
+                    # Indeed, a small difference in the coordinates will lead to empy arrays
+                    # So the bands MUST BE exactly aligned
+                    child_arr = child_arr.rio.reproject_match(
+                        pivot_arr, resampling=resampling, **kwargs
+                    )
+
+                    # Nans are conserved with +/-
+                    # So only the overlapping extent WITH nodata of both pivot and child is loaded
+                    if diff_method == DiffMethod.PIVOT_CHILD:
+                        diff_arr = pivot_arr - child_arr
+                    else:
+                        diff_arr = child_arr - pivot_arr
+
+                    # Save diff band
+                    diff_name = f"d{to_str(band)[0]}"
+                    diff_arr = pivot_arr.copy(data=diff_arr).rename(diff_name)
+                    diff_arr.attrs["long_name"] = diff_name
+
+                    # Write on disk
+                    write(diff_arr, diff_path)
+
+                diff_dict[band] = diff_arr
+
+            # Collocate diff bands
+            diff_dict = self._collocate_bands(diff_dict)
+
+            # Drop not wanted bands from pivot and child datasets
+            child_ds = child_ds.drop_vars(
+                [band for band in child_ds.keys() if band not in child_bands]
+            )
+
+            # Create diff dataset
+            coords = None
+            if diff_dict:
+                coords = diff_dict[diff_bands[0]].coords
+
+            # Make sure the dataset has the bands in the right order -> re-order the input dict
+            diff_ds = xr.Dataset(
+                {key: diff_dict[key] for key in diff_bands}, coords=coords
+            )
+
+            # Update attributes
+            child_ds = self._update_xds_attrs(child_ds, child_bands)
+            diff_ds = self._update_xds_attrs(diff_ds, diff_bands)
+        else:
+            child_ds = xr.Dataset()
+            diff_ds = xr.Dataset()
 
         return pivot_ds, child_ds, diff_ds
 
@@ -458,8 +486,14 @@ class Pair(Set):
             + list(diff_band_mapping.values())
         )
         pivot_ds = pivot_ds.rename_vars(pivot_band_mapping)
-        child_ds = rasters.collocate(pivot_ds, child_ds.rename_vars(child_band_mapping))
-        diff_ds = rasters.collocate(pivot_ds, diff_ds.rename_vars(diff_band_mapping))
+
+        if self.has_child:
+            child_ds = rasters.collocate(
+                pivot_ds, child_ds.rename_vars(child_band_mapping)
+            )
+            diff_ds = rasters.collocate(
+                pivot_ds, diff_ds.rename_vars(diff_band_mapping)
+            )
 
         # Merge datasets
         band_ds = xr.merge([pivot_ds, child_ds, diff_ds])

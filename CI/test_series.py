@@ -81,3 +81,22 @@ def test_s2_series():
         # Clean everything
         series.clear()
         series.clean_tmp()
+
+
+def test_mono_series():
+    """Test series object with Sentinel-2 products (only one mosaic)"""
+    s2_paths = [
+        [
+            data_folder()
+            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
+        ],
+    ]
+    aoi_path = data_folder() / "Fire_Spain.geojson"
+
+    # Create object
+    series = Series(paths=s2_paths)
+
+    # Stack with a pixel_size of 60m
+    series.stack(RED, window=aoi_path, pixel_size=60)
+
+    # Just see if this doesn't fail

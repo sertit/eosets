@@ -79,3 +79,22 @@ def test_s2_mosaic():
         # Clean everything
         mosaic.clear()
         mosaic.clean_tmp()
+
+
+def test_mono_mosaic():
+    """Test mosaic object with Sentinel-2 products (only one product)"""
+
+    # Get some Sentinel-2 paths
+    s2_32umu = (
+        data_folder()
+        / "S2B_MSIL2A_20220330T102619_N0400_R108_T32UMU_20220330T141833.SAFE"
+    )
+
+    # Create object
+    mosaic = Mosaic([s2_32umu], mosaic_method="VRT")
+    mosaic.stack(
+        [RED],
+        pixel_size=600,
+    )
+
+    # Just see if this doesn't fail

@@ -12,7 +12,7 @@ from eosets.pair import Pair
 
 ci.reduce_verbosity()
 
-ON_DISK = False
+ON_DISK = True
 
 
 def _test_pair_core(paths: dict) -> None:
@@ -38,6 +38,9 @@ def _test_pair_core(paths: dict) -> None:
 
         # Check footprint
         compare_geom("footprint", pair, pair_folder(), ON_DISK)
+
+        # Check some properties
+        assert pair.is_homogeneous
 
         # TODO: check with input mosaic, check child-pivot
 
@@ -105,6 +108,14 @@ def test_l8_pair():
     l8_paths = {
         "pivot_paths": [data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1.tar"],
         "child_paths": [data_folder() / "LC08_L1TP_202032_20200929_20201006_02_T1.tar"],
+    }
+    _test_pair_core(l8_paths)
+
+
+def test_pair_no_child():
+    """Test pair object with Landsat-8 products"""
+    l8_paths = {
+        "pivot_paths": [data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1.tar"],
     }
     _test_pair_core(l8_paths)
 
