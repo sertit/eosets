@@ -44,8 +44,8 @@ LOGGER = logging.getLogger(EOSETS_NAME)
 class DiffMethod(ListEnum):
     """Available difference methods."""
 
-    PIVOT_CHILD = "pivot-child"
-    CHILD_PIVOT = "child-pivot"
+    REFERENCE_SECONDARY = "reference-secondary"
+    SECONDARY_REFERENCE = "secondary-reference"
 
 
 class Pair(Set):
@@ -53,8 +53,8 @@ class Pair(Set):
 
     def __init__(
         self,
-        pivot_paths: Union[list, str, Path, CloudPath, Mosaic],
-        child_paths: Union[list, str, Path, CloudPath, Mosaic] = None,
+        reference_paths: Union[list, str, Path, CloudPath, Mosaic],
+        secondary_paths: Union[list, str, Path, CloudPath, Mosaic] = None,
         id: str = None,
         output_path: Union[str, Path, CloudPath] = None,
         remove_tmp: bool = True,
@@ -62,23 +62,23 @@ class Pair(Set):
         contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
         **kwargs,
     ):
-        # Manage pivot mosaic
-        self.pivot_mosaic = None
-        """ Pivot mosaic (unique date and contiguous). The one on which the child will be aligned. """
+        # Manage reference mosaic
+        self.reference_mosaic = None
+        """ Reference mosaic (unique date and contiguous). The one on which the secondary will be aligned. """
 
-        self.pivot_id = None
-        """ ID of the pivot product """
+        self.reference_id = None
+        """ ID of the reference product """
 
-        # Manage child mosaic
-        self.child_mosaic = None
-        """ Child mosaic (unique date and contiguous). The one which will be aligned on the pivot. """
+        # Manage secondary mosaic
+        self.secondary_mosaic = None
+        """ Secondary mosaic (unique date and contiguous). The one which will be aligned on the reference. """
 
-        self.child_id = None
-        """ ID of the child product """
+        self.secondary_id = None
+        """ ID of the secondary product """
 
         # Information regarding the pair composition
-        self.has_child = None
-        """ Does the pair have a child? (Pair with only one pivot is allowed) """
+        self.has_secondary = None
+        """ Does the pair have a secondary mosaic? (Pair with only one reference is allowed) """
 
         # Convert the checks to the corresponding enums
         contiguity_check = GeometryCheck.convert_from(contiguity_check)[0]
@@ -93,14 +93,16 @@ class Pair(Set):
         )
 
         # Update mosaics of the pair
-        if child_paths is None:
-            child_paths = []
-        self._manage_mosaics(pivot_paths, child_paths, contiguity_check, overlap_check)
+        if secondary_paths is None:
+            secondary_paths = []
+        self._manage_mosaics(
+            reference_paths, secondary_paths, contiguity_check, overlap_check
+        )
 
         # Fill attributes
-        self.full_name = f"{self.pivot_id}"
-        if self.has_child:
-            self.full_name += f"_{self.child_id}"
+        self.full_name = f"{self.reference_id}"
+        if self.has_secondary:
+            self.full_name += f"_{self.secondary_id}"
 
         self.condensed_name = self.full_name
         # TODO (how to name pair ???)
@@ -115,29 +117,29 @@ class Pair(Set):
         """
         Clean the temporary directory of the current pair
         """
-        self.pivot_mosaic.clean_tmp()
+        self.reference_mosaic.clean_tmp()
 
-        if self.has_child:
-            self.child_mosaic.clean_tmp()
+        if self.has_secondary:
+            self.secondary_mosaic.clean_tmp()
 
     def clear(self):
         """
         Clear this pair's cache
         """
         # Delete all cached properties and functions
-        self.pivot_mosaic.clear()
+        self.reference_mosaic.clear()
 
-        if self.has_child:
-            self.child_mosaic.clear()
+        if self.has_secondary:
+            self.secondary_mosaic.clear()
 
     def _manage_output(self):
         """
         Manage the output specifically for this child class
         """
-        self.pivot_mosaic.output = self.output
+        self.reference_mosaic.output = self.output
         try:
-            if self.has_child:
-                self.child_mosaic.output = self.output
+            if self.has_secondary:
+                self.secondary_mosaic.output = self.output
         except FileNotFoundError:
             # Never mind for non-existing files: they have already been copied :)
             pass
@@ -149,29 +151,29 @@ class Pair(Set):
         Returns:
             list: Products list
         """
-        prods = self.pivot_mosaic.get_prods()
+        prods = self.reference_mosaic.get_prods()
 
-        if self.has_child:
-            prods += self.child_mosaic.get_prods()
+        if self.has_secondary:
+            prods += self.secondary_mosaic.get_prods()
         return prods
 
     def _manage_mosaics(
         self,
-        pivot_paths: Union[list, str, Path, CloudPath, Mosaic],
-        child_paths: Union[list, str, Path, CloudPath, Mosaic] = None,
+        reference_paths: Union[list, str, Path, CloudPath, Mosaic],
+        secondary_paths: Union[list, str, Path, CloudPath, Mosaic] = None,
         contiguity_check: GeometryCheck = GeometryCheck.EXTENT,
         overlap_check: GeometryCheck = GeometryCheck.EXTENT,
     ) -> None:
         """
-        Check if the pivot and child mosaics are overlapping.
+        Check if the reference and secondary mosaics are overlapping.
 
         TODO: check if same constellation ?
 
         If not, throws a IncompatibleProducts error.
 
         Args:
-            pivot_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the pivot mosaic
-            child_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the child mosaic
+            reference_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the reference mosaic
+            secondary_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the secondary mosaic
             contiguity_check (GeometryCheck): Check regarding the contiguity of the products of the mosaics
             overlap_check (GeometryCheck): Check regarding the overlapping of the two mosaics
 
@@ -179,45 +181,45 @@ class Pair(Set):
             IncompatibleProducts: Incompatible products if not contiguous or not the same date
         """
         # Manage reference product
-        if isinstance(pivot_paths, Mosaic):
-            self.pivot_mosaic = pivot_paths
+        if isinstance(reference_paths, Mosaic):
+            self.reference_mosaic = reference_paths
         else:
-            self.pivot_mosaic: Mosaic = Mosaic(
-                pivot_paths,
+            self.reference_mosaic: Mosaic = Mosaic(
+                reference_paths,
                 output_path=self._get_tmp_folder(writable=True),
                 remove_tmp=self._remove_tmp,
                 contiguity_check=contiguity_check,
             )
-        self.pivot_id: str = self.pivot_mosaic.id
+        self.reference_id: str = self.reference_mosaic.id
 
         # Information regarding the pair composition
-        self.has_child: bool = len(child_paths) > 0
+        self.has_secondary: bool = len(secondary_paths) > 0
 
-        if self.has_child:
-            if isinstance(pivot_paths, Mosaic):
-                self.pivot_mosaic = pivot_paths
+        if self.has_secondary:
+            if isinstance(reference_paths, Mosaic):
+                self.reference_mosaic = reference_paths
             else:
-                self.child_mosaic: Mosaic = Mosaic(
-                    child_paths,
+                self.secondary_mosaic: Mosaic = Mosaic(
+                    secondary_paths,
                     output_path=self._get_tmp_folder(writable=True),
                     remove_tmp=self._remove_tmp,
                     contiguity_check=contiguity_check,
                 )
-            self.child_id: str = self.child_mosaic.id
+            self.secondary_id: str = self.secondary_mosaic.id
 
             # Check Geometry
             if overlap_check != GeometryCheck.NONE:
-                pivot_geom: gpd.GeoDataFrame = getattr(
-                    self.pivot_mosaic, str(overlap_check.value)
+                ref_geom: gpd.GeoDataFrame = getattr(
+                    self.reference_mosaic, str(overlap_check.value)
                 )()
-                child_geom: gpd.GeoDataFrame = getattr(
-                    self.child_mosaic, str(overlap_check.value)
+                sec_geom: gpd.GeoDataFrame = getattr(
+                    self.secondary_mosaic, str(overlap_check.value)
                 )()
-                if not pivot_geom.intersects(
-                    child_geom.to_crs(self.pivot_mosaic.crs)
+                if not ref_geom.intersects(
+                    sec_geom.to_crs(self.reference_mosaic.crs)
                 ).all():
                     raise IncompatibleProducts(
-                        "Pivot and child mosaics should overlap!"
+                        "Reference and secondary mosaics should overlap!"
                     )
 
         self.nof_prods = len(self.get_prods())
@@ -230,59 +232,59 @@ class Pair(Set):
     @cache
     def footprint(self) -> gpd.GeoDataFrame:
         """
-        Get the footprint of the pair, i.e. the intersection between pivot and child footprints.
+        Get the footprint of the pair, i.e. the intersection between reference and secondary footprints.
 
         Returns:
             gpd.GeoDataFrame: Footprint of the pair
         """
-        pivot_geom: gpd.GeoDataFrame = self.pivot_mosaic.footprint()
+        ref_geom: gpd.GeoDataFrame = self.reference_mosaic.footprint()
 
-        if self.has_child:
-            child_geom: gpd.GeoDataFrame = self.child_mosaic.footprint().to_crs(
-                self.pivot_mosaic.crs
+        if self.has_secondary:
+            second_geom: gpd.GeoDataFrame = self.secondary_mosaic.footprint().to_crs(
+                self.reference_mosaic.crs
             )
-            footprint = pivot_geom.overlay(child_geom, "intersection")
+            footprint = ref_geom.overlay(second_geom, "intersection")
         else:
-            footprint = pivot_geom
+            footprint = ref_geom
 
         return footprint
 
     @cache
     def extent(self) -> gpd.GeoDataFrame:
         """
-        Get the extent of the pair, i.e. the intersection between pivot and child extents.
+        Get the extent of the pair, i.e. the intersection between reference and secondary extents.
 
         Returns:
             gpd.GeoDataFrame: Extent of the pair
 
         """
-        pivot_geom: gpd.GeoDataFrame = self.pivot_mosaic.extent()
+        ref_geom: gpd.GeoDataFrame = self.reference_mosaic.extent()
 
-        if self.has_child:
-            child_geom: gpd.GeoDataFrame = self.child_mosaic.extent().to_crs(
-                self.pivot_mosaic.crs
+        if self.has_secondary:
+            second_geom: gpd.GeoDataFrame = self.secondary_mosaic.extent().to_crs(
+                self.reference_mosaic.crs
             )
-            extent = pivot_geom.overlay(child_geom, "intersection")
+            extent = ref_geom.overlay(second_geom, "intersection")
         else:
-            extent = pivot_geom
+            extent = ref_geom
         return extent
 
     def load(
         self,
-        pivot_bands: Union[list, BandNames, str] = None,
-        child_bands: Union[list, BandNames, str] = None,
+        reference_bands: Union[list, BandNames, str] = None,
+        secondary_bands: Union[list, BandNames, str] = None,
         diff_bands: Union[list, BandNames, str] = None,
         pixel_size: float = None,
-        diff_method: DiffMethod = DiffMethod.PIVOT_CHILD,
+        diff_method: DiffMethod = DiffMethod.REFERENCE_SECONDARY,
         resampling: Resampling = Resampling.bilinear,
         **kwargs,
     ) -> (xr.Dataset, xr.Dataset, xr.Dataset):
         """
-        Load the bands and compute the wanted spectral indices for pivot, child and diff.
+        Load the bands and compute the wanted spectral indices for reference, secondary and diff.
 
         Args:
-            pivot_bands (Union[list, BandNames, str]): Wanted pivot bands
-            child_bands (Union[list, BandNames, str]): Wanted child bands
+            reference_bands (Union[list, BandNames, str]): Wanted reference bands
+            secondary_bands (Union[list, BandNames, str]): Wanted secondary bands
             diff_bands (Union[list, BandNames, str]): Wanted diff bands
             pixel_size (float): Pixel size of the returned Datasets. If not specified, use the pair's pixel size.
             diff_method (DiffMethod): Difference method for the computation of diff_bands
@@ -290,54 +292,58 @@ class Pair(Set):
             kwargs: Other arguments used to load bands
 
         Returns:
-            (xr.Dataset, xr.Dataset, xr.Dataset): Pivot, child and diff wanted bands as xr.Datasets
+            (xr.Dataset, xr.Dataset, xr.Dataset): Reference, secondary and diff wanted bands as xr.Datasets
         """
         assert any(
-            [pivot_bands is not None, child_bands is not None, diff_bands is not None]
+            [
+                reference_bands is not None,
+                secondary_bands is not None,
+                diff_bands is not None,
+            ]
         )
 
         # Convert just in case
-        if pivot_bands is None:
-            pivot_bands = []
-        if child_bands is None:
-            child_bands = []
+        if reference_bands is None:
+            reference_bands = []
+        if secondary_bands is None:
+            secondary_bands = []
         if diff_bands is None:
             diff_bands = []
 
-        pivot_bands = to_band(pivot_bands)
-        child_bands = to_band(child_bands)
+        reference_bands = to_band(reference_bands)
+        secondary_bands = to_band(secondary_bands)
         diff_bands = to_band(diff_bands)
 
         # Check existing diff paths
         diff_bands_to_load, diff_bands_path = self.get_bands_to_load(diff_bands)
 
-        # Overload pivot and child bands with diff bands
-        pivot_bands_to_load = pivot_bands.copy()
-        child_bands_to_load = child_bands.copy()
+        # Overload reference and secondary bands with diff bands
+        ref_bands_to_load = reference_bands.copy()
+        sec_bands_to_load = secondary_bands.copy()
         for band in diff_bands_to_load:
-            if band not in pivot_bands:
-                pivot_bands_to_load.append(band)
-            if band not in child_bands:
-                child_bands_to_load.append(band)
+            if band not in reference_bands:
+                ref_bands_to_load.append(band)
+            if band not in secondary_bands:
+                sec_bands_to_load.append(band)
 
         # -- Load bands
         window = kwargs.pop("window", self.footprint())
 
-        # Load pivot bands
-        pivot_ds: xr.Dataset = self.pivot_mosaic.load(
-            pivot_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
+        # Load reference bands
+        ref_ds: xr.Dataset = self.reference_mosaic.load(
+            ref_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
         )
 
-        pivot_ds = pivot_ds.drop_vars(
-            [band for band in pivot_ds.keys() if band not in pivot_bands]
+        ref_ds = ref_ds.drop_vars(
+            [band for band in ref_ds.keys() if band not in reference_bands]
         )
 
-        pivot_ds = self._update_xds_attrs(pivot_ds, pivot_bands)
+        ref_ds = self._update_xds_attrs(ref_ds, reference_bands)
 
-        # Load child bands
-        if self.has_child:
-            child_ds: xr.Dataset = self.child_mosaic.load(
-                child_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
+        # Load secondary bands
+        if self.has_secondary:
+            sec_ds: xr.Dataset = self.secondary_mosaic.load(
+                sec_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
             )
 
             # Load diff bands
@@ -355,26 +361,26 @@ class Pair(Set):
                     )
                 else:
                     f"*** Loading d{to_str(band)} for {self.condensed_name} ***"
-                    pivot_arr = pivot_ds[band]
-                    child_arr = child_ds[band]
+                    ref_arr = ref_ds[band]
+                    sec_arr = sec_ds[band]
 
                     # To be sure, always collocate arrays, even if the size is the same
                     # Indeed, a small difference in the coordinates will lead to empy arrays
                     # So the bands MUST BE exactly aligned
-                    child_arr = child_arr.rio.reproject_match(
-                        pivot_arr, resampling=resampling, **kwargs
+                    sec_arr = sec_arr.rio.reproject_match(
+                        ref_arr, resampling=resampling, **kwargs
                     )
 
                     # Nans are conserved with +/-
-                    # So only the overlapping extent WITH nodata of both pivot and child is loaded
-                    if diff_method == DiffMethod.PIVOT_CHILD:
-                        diff_arr = pivot_arr - child_arr
+                    # So only the overlapping extent WITH nodata of both reference and secondary is loaded
+                    if diff_method == DiffMethod.REFERENCE_SECONDARY:
+                        diff_arr = ref_arr - sec_arr
                     else:
-                        diff_arr = child_arr - pivot_arr
+                        diff_arr = sec_arr - ref_arr
 
                     # Save diff band
                     diff_name = f"d{to_str(band)[0]}"
-                    diff_arr = pivot_arr.copy(data=diff_arr).rename(diff_name)
+                    diff_arr = ref_arr.copy(data=diff_arr).rename(diff_name)
                     diff_arr.attrs["long_name"] = diff_name
 
                     # Write on disk
@@ -385,9 +391,9 @@ class Pair(Set):
             # Collocate diff bands
             diff_dict = self._collocate_bands(diff_dict)
 
-            # Drop not wanted bands from pivot and child datasets
-            child_ds = child_ds.drop_vars(
-                [band for band in child_ds.keys() if band not in child_bands]
+            # Drop not wanted bands from reference and secondary datasets
+            sec_ds = sec_ds.drop_vars(
+                [band for band in sec_ds.keys() if band not in secondary_bands]
             )
 
             # Create diff dataset
@@ -401,13 +407,13 @@ class Pair(Set):
             )
 
             # Update attributes
-            child_ds = self._update_xds_attrs(child_ds, child_bands)
+            sec_ds = self._update_xds_attrs(sec_ds, secondary_bands)
             diff_ds = self._update_xds_attrs(diff_ds, diff_bands)
         else:
-            child_ds = xr.Dataset()
+            sec_ds = xr.Dataset()
             diff_ds = xr.Dataset()
 
-        return pivot_ds, child_ds, diff_ds
+        return ref_ds, sec_ds, diff_ds
 
     def _update_attrs_constellation_specific(
         self, xarr: xr.DataArray, bands: list, **kwargs
@@ -427,11 +433,11 @@ class Pair(Set):
 
     def stack(
         self,
-        pivot_bands: Union[list, BandNames, str] = None,
-        child_bands: Union[list, BandNames, str] = None,
+        reference_bands: Union[list, BandNames, str] = None,
+        secondary_bands: Union[list, BandNames, str] = None,
         diff_bands: Union[list, BandNames, str] = None,
         pixel_size: float = None,
-        diff_method: DiffMethod = DiffMethod.PIVOT_CHILD,
+        diff_method: DiffMethod = DiffMethod.REFERENCE_SECONDARY,
         stack_path: Union[str, AnyPathType] = None,
         save_as_int: bool = False,
         **kwargs,
@@ -440,9 +446,9 @@ class Pair(Set):
         Stack bands and index of a pair.
 
         Args:
-            pivot_bands (Union[list, BandNames, str]): Bands and index combination for the pivot mosaic
-            child_bands (Union[list, BandNames, str]): Bands and index combination for the child mosaic
-            diff_bands (Union[list, BandNames, str]): Bands and index combination for the difference between pivot and child mosaic
+            reference_bands (Union[list, BandNames, str]): Bands and index combination for the reference mosaic
+            secondary_bands (Union[list, BandNames, str]): Bands and index combination for the secondary mosaic
+            diff_bands (Union[list, BandNames, str]): Bands and index combination for the difference between reference and secondary mosaic
             pixel_size (float): Stack pixel size. If not specified, use the pair's pixel size.
             stack_path (Union[str, AnyPathType]): Stack path
             save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
@@ -452,19 +458,23 @@ class Pair(Set):
             xr.DataArray: Stack as a DataArray
         """
         assert any(
-            [pivot_bands is not None, child_bands is not None, diff_bands is not None]
+            [
+                reference_bands is not None,
+                secondary_bands is not None,
+                diff_bands is not None,
+            ]
         )
 
         # Convert just in case
-        if pivot_bands is None:
-            pivot_bands = []
-        if child_bands is None:
-            child_bands = []
+        if reference_bands is None:
+            reference_bands = []
+        if secondary_bands is None:
+            secondary_bands = []
         if diff_bands is None:
             diff_bands = []
 
-        pivot_bands = to_band(pivot_bands)
-        child_bands = to_band(child_bands)
+        reference_bands = to_band(reference_bands)
+        secondary_bands = to_band(secondary_bands)
         diff_bands = to_band(diff_bands)
 
         if stack_path:
@@ -475,31 +485,35 @@ class Pair(Set):
                 os.makedirs(str(stack_path.parent), exist_ok=True)
 
         # Load all bands
-        pivot_ds, child_ds, diff_ds = self.load(
-            pivot_bands, child_bands, diff_bands, pixel_size=pixel_size, **kwargs
+        ref_ds, sec_ds, diff_ds = self.load(
+            reference_bands,
+            secondary_bands,
+            diff_bands,
+            pixel_size=pixel_size,
+            **kwargs,
         )
 
         # Rename bands
-        pivot_band_mapping = {band: f"Pivot_{to_str(band)[0]}" for band in pivot_bands}
-        child_band_mapping = {band: f"Child_{to_str(band)[0]}" for band in child_bands}
+        ref_band_mapping = {
+            band: f"Reference_{to_str(band)[0]}" for band in reference_bands
+        }
+        sec_band_mapping = {
+            band: f"Secondary_{to_str(band)[0]}" for band in secondary_bands
+        }
         diff_band_mapping = {band: f"d{to_str(band)[0]}" for band in diff_bands}
         all_bands = (
-            list(pivot_band_mapping.values())
-            + list(child_band_mapping.values())
+            list(ref_band_mapping.values())
+            + list(sec_band_mapping.values())
             + list(diff_band_mapping.values())
         )
-        pivot_ds = pivot_ds.rename_vars(pivot_band_mapping)
+        ref_ds = ref_ds.rename_vars(ref_band_mapping)
 
-        if self.has_child:
-            child_ds = rasters.collocate(
-                pivot_ds, child_ds.rename_vars(child_band_mapping)
-            )
-            diff_ds = rasters.collocate(
-                pivot_ds, diff_ds.rename_vars(diff_band_mapping)
-            )
+        if self.has_secondary:
+            sec_ds = rasters.collocate(ref_ds, sec_ds.rename_vars(sec_band_mapping))
+            diff_ds = rasters.collocate(ref_ds, diff_ds.rename_vars(diff_band_mapping))
 
         # Merge datasets
-        band_ds = xr.merge([pivot_ds, child_ds, diff_ds])
+        band_ds = xr.merge([ref_ds, sec_ds, diff_ds])
 
         # Stack bands
         if save_as_int:
@@ -531,4 +545,4 @@ class Pair(Set):
         Returns:
             xr.Dataset: Collocated bands
         """
-        return self.pivot_mosaic._collocate_bands(bands, reference)
+        return self.reference_mosaic._collocate_bands(bands, reference)

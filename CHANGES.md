@@ -3,8 +3,9 @@
 
 ## 0.1.1 (2023-MM-DD)
 
-- FIX: Fix Pair without child
-- CI: Test Pair without child and Mosaic and Series with only one product
+- **BREAKING CHANGE**: Switching from `pivot`/`child` to `reference`/`secondary`
+- FIX: Fix Pair without secondary
+- CI: Test Pair without secondary and Mosaic and Series with only one product
 
 ## 0.1.0 (2023-07-19)
 

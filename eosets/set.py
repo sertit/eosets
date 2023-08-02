@@ -285,12 +285,11 @@ class Set:
         if self.nof_prods > 1:
             if callable(ref_attr):
                 is_homogeneous = all(
-                    ref_attr() == getattr(child, attr)()
-                    for child in self.get_prods()[1:]
+                    ref_attr() == getattr(sec, attr)() for sec in self.get_prods()[1:]
                 )
             else:
                 is_homogeneous = all(
-                    ref_attr == getattr(child, attr) for child in self.get_prods()[1:]
+                    ref_attr == getattr(sec, attr) for sec in self.get_prods()[1:]
                 )
         else:
             is_homogeneous = True

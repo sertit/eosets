@@ -91,7 +91,7 @@ class Series(Set):
     ):
         # Manage mosaics
         self.mosaics = None
-        """ Pivot mosaic (unique date and contiguous). The one on which the child will be aligned. """
+        """ Mosaics composing the series. """
 
         self.id = None
         """ ID of the series """
@@ -331,7 +331,7 @@ class Series(Set):
         # Load bands
         window = kwargs.pop("window", self.footprint())
 
-        # Load pivot bands
+        # Load ruling mosaic bands
         ruling_ds = self.ruling_mosaic.load(
             bands, pixel_size=pixel_size, window=window, **kwargs
         ).expand_dims({"time": [self.ruling_mosaic.datetime]}, axis=-1)

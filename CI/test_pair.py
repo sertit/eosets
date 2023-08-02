@@ -42,14 +42,14 @@ def _test_pair_core(paths: dict) -> None:
         # Check some properties
         assert pair.is_homogeneous
 
-        # TODO: check with input mosaic, check child-pivot
+        # TODO: check with input mosaic, check secondary-reference
 
         # Stack with a pixel_size of 60m
         pair_out = pair.output / "red_stack.tif"
         assert pair.has_bands(RED)
         pair.stack(
-            pivot_bands=RED,
-            child_bands=RED,
+            reference_bands=RED,
+            secondary_bands=RED,
             diff_bands=RED,
             window=aoi_path,
             pixel_size=60,
@@ -76,11 +76,11 @@ def _test_pair_core(paths: dict) -> None:
 def test_s2_pair():
     """Test pair object with Sentinel-2 products"""
     s2_paths = {
-        "pivot_paths": [
+        "reference_paths": [
             data_folder()
             / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
         ],
-        "child_paths": [
+        "secondary_paths": [
             data_folder()
             / "S2B_MSIL1C_20200908T110619_N0209_R137_T29TQE_20200908T132324.zip"
         ],
@@ -91,11 +91,11 @@ def test_s2_pair():
 def test_s3_pair():
     """Test pair object with Sentinel-3 products"""
     s3_paths = {
-        "pivot_paths": [
+        "reference_paths": [
             data_folder()
             / "S3B_SL_1_RBT____20200824T105515_20200824T105815_20200825T151744_0179_042_322_2340_LN2_O_NT_004.SEN3"
         ],
-        "child_paths": [
+        "secondary_paths": [
             data_folder()
             / "S3B_SL_1_RBT____20200909T104016_20200909T104316_20200910T161910_0179_043_165_2340_LN2_O_NT_004.SEN3"
         ],
@@ -106,16 +106,22 @@ def test_s3_pair():
 def test_l8_pair():
     """Test pair object with Landsat-8 products"""
     l8_paths = {
-        "pivot_paths": [data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1.tar"],
-        "child_paths": [data_folder() / "LC08_L1TP_202032_20200929_20201006_02_T1.tar"],
+        "reference_paths": [
+            data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1.tar"
+        ],
+        "secondary_paths": [
+            data_folder() / "LC08_L1TP_202032_20200929_20201006_02_T1.tar"
+        ],
     }
     _test_pair_core(l8_paths)
 
 
-def test_pair_no_child():
+def test_pair_no_secondary():
     """Test pair object with Landsat-8 products"""
     l8_paths = {
-        "pivot_paths": [data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1.tar"],
+        "reference_paths": [
+            data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1.tar"
+        ],
     }
     _test_pair_core(l8_paths)
 
@@ -123,11 +129,11 @@ def test_pair_no_child():
 def test_pair_fail():
     """Test failure for pair objects"""
     paths = {
-        "pivot_paths": [
+        "reference_paths": [
             data_folder()
             / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
         ],
-        "child_paths": [
+        "secondary_paths": [
             data_folder()
             / "S2B_MSIL2A_20220228T102849_N0400_R108_T32ULU_20220228T134712.SAFE"
         ],
