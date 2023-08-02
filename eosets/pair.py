@@ -98,7 +98,10 @@ class Pair(Set):
         self._manage_mosaics(pivot_paths, child_paths, contiguity_check, overlap_check)
 
         # Fill attributes
-        self.full_name = f"{self.pivot_id}_{self.child_id}"
+        self.full_name = f"{self.pivot_id}"
+        if self.has_child:
+            self.full_name += f"_{self.child_id}"
+
         self.condensed_name = self.full_name
         # TODO (how to name pair ???)
 

@@ -12,7 +12,7 @@ from eosets.pair import Pair
 
 ci.reduce_verbosity()
 
-ON_DISK = True
+ON_DISK = False
 
 
 def _test_pair_core(paths: dict) -> None:
