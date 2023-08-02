@@ -86,7 +86,7 @@ class Series(Set):
         contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
         alignement: Union[Alignment, str] = Alignment.FIRST,
         coregister: bool = False,
-        ruling_mosaic: Union[Mosaic, int, str] = None,
+        reference_mosaic: Union[Mosaic, int, str] = None,
         **kwargs,
     ):
         # Manage mosaics
@@ -102,8 +102,8 @@ class Series(Set):
         self.coregister = coregister
         """ Do we need to coregister the time series? """
 
-        self.ruling_mosaic = ruling_mosaic
-        """ Ruling mosaic """
+        self.reference_mosaic = reference_mosaic
+        """ Reference mosaic """
 
         self._unique_mosaic = len(paths) == 1
 
@@ -209,16 +209,16 @@ class Series(Set):
 
         # Check geometry
         if overlap_check != GeometryCheck.NONE:
-            ruling_geom: gpd.GeoDataFrame = getattr(
-                self.ruling_mosaic, str(overlap_check.value)
+            reference_geom: gpd.GeoDataFrame = getattr(
+                self.reference_mosaic, str(overlap_check.value)
             )()
             for mos in self.mosaics:
-                if mos.id != self.ruling_mosaic.id:
+                if mos.id != self.reference_mosaic.id:
                     mos_geom: gpd.GeoDataFrame = getattr(
                         mos, str(overlap_check.value)
                     )()
-                    if not ruling_geom.intersects(
-                        mos_geom.to_crs(self.ruling_mosaic.crs)
+                    if not reference_geom.intersects(
+                        mos_geom.to_crs(self.reference_mosaic.crs)
                     ).all():
                         raise IncompatibleProducts("All mosaics should overlap!")
 
@@ -230,39 +230,39 @@ class Series(Set):
         # TODO (how to name series ???)
 
     @property
-    def ruling_mosaic(self) -> Mosaic:
+    def reference_mosaic(self) -> Mosaic:
         """
-        Get the ruling mosaic of the series
+        Get the reference mosaic of the series
 
         Returns:
             Mosaic: Output path ofthe mosaic
         """
         if self.alignment in [Alignment.FIRST, Alignment.LAST]:
-            return self.mosaics[self._ruling_mosaic]
+            return self.mosaics[self._reference_mosaic]
         elif self.alignment == Alignment.MEAN:
             raise NotImplementedError
         elif self.alignment == Alignment.EXTERNAL:
-            return self._ruling_mosaic
+            return self._reference_mosaic
         elif self.alignment == Alignment.CUSTOM:
-            if isinstance(self._ruling_mosaic, int):
-                return self.mosaics[self._ruling_mosaic]
+            if isinstance(self._reference_mosaic, int):
+                return self.mosaics[self._reference_mosaic]
 
-    @ruling_mosaic.setter
-    def ruling_mosaic(self, mosaic: Union[Mosaic, int] = None):
+    @reference_mosaic.setter
+    def reference_mosaic(self, mosaic: Union[Mosaic, int] = None):
         if self.alignment == Alignment.FIRST:
-            self._ruling_mosaic = 0
+            self._reference_mosaic = 0
         elif self.alignment == Alignment.LAST:
-            self._ruling_mosaic = -1
+            self._reference_mosaic = -1
         elif self.alignment == Alignment.MEAN:
             raise NotImplementedError
         elif self.alignment == Alignment.EXTERNAL:
             assert mosaic is not None
-            self._ruling_mosaic = mosaic
+            self._reference_mosaic = mosaic
         elif self.alignment == Alignment.CUSTOM:
             assert isinstance(mosaic, (Mosaic, int))
             if isinstance(mosaic, int):
                 assert abs(mosaic) <= len(self.mosaics)
-            self._ruling_mosaic = mosaic
+            self._reference_mosaic = mosaic
 
     def read_mtd(self):
         """Read the pair's metadata, but not implemented for now."""
@@ -272,14 +272,14 @@ class Series(Set):
     @cache
     def footprint(self) -> gpd.GeoDataFrame:
         """
-        Get the footprint of the series, i.e. the intersection between all mosaics in the ruling mosaic's CRS.
+        Get the footprint of the series, i.e. the intersection between all mosaics in the reference mosaic's CRS.
 
         Returns:
             gpd.GeoDataFrame: Footprint of the mosaic
         """
         footprint = None
         for mos in self.mosaics:
-            geom: gpd.GeoDataFrame = mos.footprint().to_crs(self.ruling_mosaic.crs)
+            geom: gpd.GeoDataFrame = mos.footprint().to_crs(self.reference_mosaic.crs)
             if footprint is None:
                 footprint = geom
             else:
@@ -290,7 +290,7 @@ class Series(Set):
     @cache
     def extent(self) -> gpd.GeoDataFrame:
         """
-        Get the extent of the series, i.e. the intersection between all mosaics in the ruling mosaic's CRS.
+        Get the extent of the series, i.e. the intersection between all mosaics in the reference mosaic's CRS.
 
         Returns:
             gpd.GeoDataFrame: Extent of the mosaic
@@ -298,7 +298,7 @@ class Series(Set):
         """
         extent = None
         for mos in self.mosaics:
-            geom: gpd.GeoDataFrame = mos.footprint().to_crs(self.ruling_mosaic.crs)
+            geom: gpd.GeoDataFrame = mos.footprint().to_crs(self.reference_mosaic.crs)
             if extent is None:
                 extent = geom
             else:
@@ -331,10 +331,10 @@ class Series(Set):
         # Load bands
         window = kwargs.pop("window", self.footprint())
 
-        # Load ruling mosaic bands
-        ruling_ds = self.ruling_mosaic.load(
+        # Load reference mosaic bands
+        reference_ds = self.reference_mosaic.load(
             bands, pixel_size=pixel_size, window=window, **kwargs
-        ).expand_dims({"time": [self.ruling_mosaic.datetime]}, axis=-1)
+        ).expand_dims({"time": [self.reference_mosaic.datetime]}, axis=-1)
 
         # Load mosaic bands
         arr_dict = defaultdict(list)
@@ -343,21 +343,21 @@ class Series(Set):
             dt = mos.datetime
 
             # Manage if band to be loaded or already on memory
-            if mos.id != self.ruling_mosaic.id:
+            if mos.id != self.reference_mosaic.id:
                 # Load bands for new mosaic
                 mos_ds = mos.load(bands, pixel_size=pixel_size, window=window, **kwargs)
 
                 # Add the bands to the dataset
                 for band in bands:
                     mos_arr = mos_ds[band]
-                    ruling_arr = ruling_ds[band]
+                    reference_arr = reference_ds[band]
 
                     # To be sure, always collocate arrays, even if the size is the same
                     # Indeed, a small difference in the coordinates will lead to empy arrays
                     # So the bands MUST BE exactly aligned
                     mos_arr = (
                         mos_arr.rio.reproject_match(
-                            ruling_arr, resampling=resampling, **kwargs
+                            reference_arr, resampling=resampling, **kwargs
                         )
                         .expand_dims({"time": [dt]}, axis=-1)
                         .assign_coords({"time": [dt]})
@@ -368,14 +368,14 @@ class Series(Set):
             else:
                 # We already have the bands in memory, just assign time to every arrays and save it
                 for band in bands:
-                    mos_arr = ruling_ds[band].assign_coords({"time": [dt]})
+                    mos_arr = reference_ds[band].assign_coords({"time": [dt]})
                     arr_dict[band].append(mos_arr)
 
         # Create empty dataset with correct coordinates
         series_ds = xr.Dataset(
             coords={
-                "x": ruling_ds.x,
-                "y": ruling_ds.y,
+                "x": reference_ds.x,
+                "y": reference_ds.y,
                 "band": np.arange(1, len(self.mosaics) + 1),  # One array per band
                 "time": [mos.datetime for mos in self.mosaics],
             }
@@ -402,7 +402,7 @@ class Series(Set):
 
         Args:
             bands (list): Bands and index combination
-            pixel_size (float): Stack pixel size. . If not specified, use the product pixel size.
+            pixel_size (float): Stack pixel size. If not specified, use the product pixel size.
             stack_path (Union[str, AnyPathType]): Stack path
             save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
             **kwargs: Other arguments passed to :code:`load` or :code:`rioxarray.to_raster()` (such as :code:`compress`)

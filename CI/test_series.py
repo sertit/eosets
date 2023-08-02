@@ -59,7 +59,7 @@ def test_s2_series():
         # Check footprint
         compare_geom("footprint", series, series_folder(), ON_DISK)
 
-        # TODO: check with input mosaic, different ruling mosaic
+        # TODO: check with input mosaic, different reference mosaic
 
         # Stack with a pixel_size of 60m
         series_path = series.output / "red_stack.tif"
