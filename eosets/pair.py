@@ -350,7 +350,7 @@ class Pair(Set):
             diff_dict = {}
             for band in diff_bands:
                 diff_path, exists = self._get_out_path(
-                    f"{self.condensed_name}_{to_str(band)[0]}.tif"
+                    f"{self.condensed_name}_d{to_str(band)[0]}.tif"
                 )
                 if exists:
                     diff_arr = read(
