@@ -5,6 +5,7 @@
 
 - **BREAKING CHANGE**: Switching from `pivot`/`child` to `reference`/`secondary`
 - **BREAKING CHANGE**: Switching from `ruling` to `reference`
+- FIX: With mosaics, fix paths retrieval for similar bands (i.e. BAI and BAIS2)
 - FIX: With VRT mosaics, move EOReader's bands and copy raw data bands to mosaic output folder (instead of always moving)
 - FIX: Fix Pair without secondary
 - CI: Test Pair without secondary and Mosaic and Series with only one product

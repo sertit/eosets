@@ -374,7 +374,7 @@ class Mosaic(Set):
                 else:
                     # Use glob fct as _get_band_folder is a tmpDirectory
                     band_path = glob(
-                        os.path.join(prod._get_band_folder(), f"*{to_str(band)[0]}*")
+                        os.path.join(prod._get_band_folder(), f"*_{to_str(band)[0]}_*")
                     )[0]
 
                 prod_band_paths[band].append(str(band_path))
