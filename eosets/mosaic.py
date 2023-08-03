@@ -32,7 +32,7 @@ from eoreader.bands import BandNames, is_spectral_band, to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
-from sertit import rasters
+from sertit import files, rasters
 from sertit.misc import ListEnum
 
 from eosets import EOSETS_NAME
@@ -390,7 +390,12 @@ class Mosaic(Set):
                     for path in prod_band_paths[band]:
                         out_path, exists = self._get_out_path(os.path.basename(path))
                         if not exists:
-                            shutil.move(path, out_path)
+                            if AnyPath(path).parent.is_relative_to(self.output):
+                                # If EOReader's band: move
+                                shutil.move(path, out_path)
+                            else:
+                                # If raw product's band: copy
+                                files.copy(path, out_path)
                         prod_path.append(out_path)
                 else:
                     prod_path = prod_band_paths[band]
