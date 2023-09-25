@@ -410,7 +410,7 @@ class Mosaic(Set):
 
             # Load in memory and update attribute
             merged_dict[band] = self._update_attrs(
-                rasters.read(output_path), bands, **kwargs
+                utils.read(output_path), bands, **kwargs
             )
 
         # Collocate VRTs
