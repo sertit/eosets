@@ -358,26 +358,31 @@ class Mosaic(Set):
 
         # Load and reorganize bands
         prod_band_paths = defaultdict(list)
-        for prod in self.get_prods():
-            prod: Product
-            LOGGER.debug(
-                f"*** Loading {to_str(bands_to_load)} for {prod.condensed_name} ***"
-            )
+        if bands_to_load:
+            for prod in self.get_prods():
+                prod: Product
+                LOGGER.debug(
+                    f"*** Loading {to_str(bands_to_load)} for {prod.condensed_name} ***"
+                )
 
-            # Load bands
-            prod.load(bands_to_load, pixel_size, **kwargs).keys()
+                # Load bands
+                prod.load(bands_to_load, pixel_size, **kwargs).keys()
 
-            # Store paths
-            for band in bands_to_load:
-                if is_spectral_band(band):
-                    band_path = prod.get_band_paths([band], pixel_size, **kwargs)[band]
-                else:
-                    # Use glob fct as _get_band_folder is a tmpDirectory
-                    band_path = glob(
-                        os.path.join(prod._get_band_folder(), f"*_{to_str(band)[0]}_*")
-                    )[0]
+                # Store paths
+                for band in bands_to_load:
+                    if is_spectral_band(band):
+                        band_path = prod.get_band_paths([band], pixel_size, **kwargs)[
+                            band
+                        ]
+                    else:
+                        # Use glob fct as _get_band_folder is a tmpDirectory
+                        band_path = glob(
+                            os.path.join(
+                                prod._get_band_folder(), f"*_{to_str(band)[0]}_*"
+                            )
+                        )[0]
 
-                prod_band_paths[band].append(str(band_path))
+                    prod_band_paths[band].append(str(band_path))
 
         # Merge
         merged_dict = {}
