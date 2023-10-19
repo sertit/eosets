@@ -11,6 +11,7 @@
 - FIX: Fix Pair without secondary
 - FIX: Mosaic - Don't try to load sth if bands_to_load is empty 
 - CI: Test Pair without secondary and Mosaic and Series with only one product
+- CI: Update pre-commit hooks
 
 ## 0.1.0 (2023-07-19)
 
