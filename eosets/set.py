@@ -439,7 +439,6 @@ class Set:
         return xds
 
     def get_bands_to_load(self, bands, out_suffix="tif") -> (list, dict):
-
         # Get the bands to be loaded
         bands_path = {}
         bands_to_load = []
