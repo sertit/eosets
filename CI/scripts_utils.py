@@ -3,9 +3,8 @@ import logging
 import os
 from typing import Any
 
-from cloudpathlib import AnyPath
 from eoreader.reader import Reader
-from sertit import ci
+from sertit import AnyPath, ci
 
 from eosets import EOSETS_NAME
 from eosets.utils import AnyPathType

@@ -21,24 +21,23 @@ import shutil
 from collections import defaultdict
 from enum import unique
 from glob import glob
-from pathlib import Path
 from typing import Union
 
 import geopandas as gpd
 import xarray as xr
-from cloudpathlib import AnyPath, CloudPath
 from eoreader import cache, utils
 from eoreader.bands import BandNames, is_spectral_band, to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
-from sertit import files, rasters
+from sertit import AnyPath, files, rasters
 from sertit.misc import ListEnum
+from sertit.types import AnyPathStrType
 
 from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.set import GeometryCheck, Set
-from eosets.utils import AnyPathType
+from eosets.utils import AnyPathType, stack
 
 READER = Reader()
 
@@ -128,7 +127,7 @@ class Mosaic(Set):
 
     def _manage_prods(
         self,
-        paths: Union[list, str, Path, CloudPath],
+        paths: Union[list, AnyPathStrType],
         contiguity_check: GeometryCheck,
         **kwargs,
     ):
@@ -136,7 +135,7 @@ class Mosaic(Set):
         Manage products attributes and check the compatibility of the mosaic's components
 
         Args:
-            paths (Union[list, str, Path, CloudPath]): Paths of the mosaic
+            paths (Union[list, AnyPathStrType]): Paths of the mosaic
             contiguity_check (GeometryCheck): Method to check the contiguity of the mosaic
             **kwargs: Other arguments
 
@@ -466,17 +465,17 @@ class Mosaic(Set):
             nodata = kwargs.get("nodata", UINT16_NODATA)
         else:
             nodata = kwargs.get("nodata", self.nodata)
-        stack, dtype = utils.stack_dict(bands, band_ds, save_as_int, nodata, **kwargs)
+        stk, dtype = stack(bands, band_ds, save_as_int, nodata, **kwargs)
 
         # Update stack's attributes
-        stack = self._update_attrs(stack, bands, **kwargs)
+        stk = self._update_attrs(stk, bands, **kwargs)
 
         # Write on disk
         if stack_path:
             LOGGER.debug("Saving stack")
-            utils.write(stack, stack_path, dtype=dtype, **kwargs)
+            utils.write(stk, stack_path, dtype=dtype, **kwargs)
 
-        return stack
+        return stk
 
     def _collocate_bands(self, bands: dict, reference: xr.DataArray = None) -> dict:
         """

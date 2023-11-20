@@ -25,10 +25,9 @@ from typing import Any, Tuple, Union
 
 import geopandas as gpd
 import xarray as xr
-from cloudpathlib import AnyPath, CloudPath
 from eoreader.bands import BandNames, to_str
 from eoreader.products import Product
-from sertit import files
+from sertit import AnyPath, files, path
 from sertit.misc import ListEnum
 
 from eosets import EOSETS_NAME
@@ -182,7 +181,7 @@ class Set:
         """
         # Set the new output
         self._output = AnyPath(value)
-        if not isinstance(self._output, CloudPath):
+        if not path.is_cloud_path(self._output):
             self._output = self._output.resolve()
 
         # Create temporary process folder

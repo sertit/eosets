@@ -15,14 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """ Utils file """
-from pathlib import Path
-from typing import Union
 
-from cloudpathlib import CloudPath
 from eoreader import utils
+from sertit import types
 
-AnyPathType = Union[CloudPath, Path]
+AnyPathType = types.AnyPathType
 
 read = utils.read
 write = utils.write
-stack_dict = utils.stack_dict
+stack = utils.stack_dict

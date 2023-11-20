@@ -19,25 +19,25 @@ import logging
 import os
 from collections import defaultdict
 from enum import unique
-from pathlib import Path
 from typing import Union
 
 import geopandas as gpd
 import numpy as np
 import xarray as xr
-from cloudpathlib import AnyPath, CloudPath
 from eoreader import cache
 from eoreader.bands import BandNames, to_band, to_str
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
+from sertit import AnyPath
 from sertit.misc import ListEnum
+from sertit.types import AnyPathStrType
 
 from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 from eosets.set import GeometryCheck, Set
-from eosets.utils import AnyPathType, read, stack_dict, write
+from eosets.utils import AnyPathType, read, stack, write
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 READER = Reader()
@@ -80,7 +80,7 @@ class Series(Set):
         self,
         paths: list,
         id: str = None,
-        output_path: Union[str, Path, CloudPath] = None,
+        output_path: Union[AnyPathStrType] = None,
         remove_tmp: bool = True,
         overlap_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
         contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
@@ -426,33 +426,29 @@ class Series(Set):
         band_ds = self.load(bands, pixel_size=pixel_size, **kwargs)
 
         # Rename bands and remove time variable
-        coords = {"x": band_ds.x, "y": band_ds.y, "band": 1}
-        stk_dict = {}
+        new_bands = []
         for band in bands:
             for idx, dt in enumerate(band_ds.time.values):
-                stk_dict[
+                new_bands.append(
                     f"{np.datetime_as_string(dt, unit='s')}_{to_str(band)[0]}"
-                ] = band_ds[band].sel(time=dt, drop=True)
-
-        # Create a dataset correctly formatted for stacking
-        stack_ds = xr.Dataset(stk_dict, coords=coords)
+                )
 
         # Stack bands
         if save_as_int:
             nodata = kwargs.get("nodata", UINT16_NODATA)
         else:
             nodata = kwargs.get("nodata", self.nodata)
-        stack, dtype = stack_dict(bands, stack_ds, save_as_int, nodata, **kwargs)
+        stk, dtype = stack(bands, band_ds, save_as_int, nodata, **kwargs)
 
         # Update stack's attributes
-        stack = self._update_attrs(stack, list(stk_dict.keys()), **kwargs)
+        stk = self._update_attrs(stk, new_bands, **kwargs)
 
         # Write on disk
         if stack_path:
             LOGGER.debug("Saving stack")
-            write(stack, stack_path, dtype=dtype, **kwargs)
+            write(stk, stack_path, dtype=dtype, **kwargs)
 
-        return stack
+        return stk
 
     def _update_attrs_constellation_specific(
         self, xarr: xr.DataArray, bands: list, **kwargs

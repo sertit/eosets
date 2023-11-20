@@ -18,24 +18,23 @@
 import logging
 import os
 from enum import unique
-from pathlib import Path
 from typing import Union
 
 import geopandas as gpd
 import xarray as xr
-from cloudpathlib import AnyPath, CloudPath
 from eoreader import cache
 from eoreader.bands import BandNames, to_band, to_str
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
-from sertit import rasters
+from sertit import AnyPath, rasters
 from sertit.misc import ListEnum
+from sertit.types import AnyPathStrType
 
 from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 from eosets.set import GeometryCheck, Set
-from eosets.utils import AnyPathType, read, stack_dict, write
+from eosets.utils import AnyPathType, read, stack, write
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 
@@ -53,10 +52,10 @@ class Pair(Set):
 
     def __init__(
         self,
-        reference_paths: Union[list, str, Path, CloudPath, Mosaic],
-        secondary_paths: Union[list, str, Path, CloudPath, Mosaic] = None,
+        reference_paths: Union[list, AnyPathStrType, Mosaic],
+        secondary_paths: Union[list, AnyPathStrType, Mosaic] = None,
         id: str = None,
-        output_path: Union[str, Path, CloudPath] = None,
+        output_path: Union[AnyPathStrType] = None,
         remove_tmp: bool = True,
         overlap_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
         contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
@@ -159,8 +158,8 @@ class Pair(Set):
 
     def _manage_mosaics(
         self,
-        reference_paths: Union[list, str, Path, CloudPath, Mosaic],
-        secondary_paths: Union[list, str, Path, CloudPath, Mosaic] = None,
+        reference_paths: Union[list, AnyPathStrType, Mosaic],
+        secondary_paths: Union[list, AnyPathStrType, Mosaic] = None,
         contiguity_check: GeometryCheck = GeometryCheck.EXTENT,
         overlap_check: GeometryCheck = GeometryCheck.EXTENT,
     ) -> None:
@@ -172,8 +171,8 @@ class Pair(Set):
         If not, throws a IncompatibleProducts error.
 
         Args:
-            reference_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the reference mosaic
-            secondary_paths (Union[list, str, Path, CloudPath, Mosaic]): Paths corresponding to the secondary mosaic
+            reference_paths (Union[list, AnyPathStrType, Mosaic]): Paths corresponding to the reference mosaic
+            secondary_paths (Union[list, AnyPathStrType, Mosaic]): Paths corresponding to the secondary mosaic
             contiguity_check (GeometryCheck): Check regarding the contiguity of the products of the mosaics
             overlap_check (GeometryCheck): Check regarding the overlapping of the two mosaics
 
@@ -520,17 +519,17 @@ class Pair(Set):
             nodata = kwargs.get("nodata", UINT16_NODATA)
         else:
             nodata = kwargs.get("nodata", self.nodata)
-        stack, dtype = stack_dict(all_bands, band_ds, save_as_int, nodata, **kwargs)
+        stk, dtype = stack(all_bands, band_ds, save_as_int, nodata, **kwargs)
 
         # Update stack's attributes
-        stack = self._update_attrs(stack, all_bands, **kwargs)
+        stk = self._update_attrs(stk, all_bands, **kwargs)
 
         # Write on disk
         if stack_path:
             LOGGER.debug("Saving stack")
-            write(stack, stack_path, dtype=dtype, **kwargs)
+            write(stk, stack_path, dtype=dtype, **kwargs)
 
-        return stack
+        return stk
 
     def _collocate_bands(
         self, bands: dict, reference: xr.DataArray = None
