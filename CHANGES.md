@@ -12,6 +12,7 @@
 - FIX: Mosaic - Don't try to load sth if bands_to_load is empty 
 - CI: Test Pair without secondary and Mosaic and Series with only one product
 - CI: Update pre-commit hooks
+- CI: Enabling pre-commit.ci and dependabot bots
 
 ## 0.1.0 (2023-07-19)
 
