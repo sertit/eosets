@@ -3,8 +3,7 @@ stages:
   - test
 
 variables:
-  EEO_DEPS: $REGISTRY_GITLAB/extracteo/extracteo_deps
-  EO_CONTAINER: $REGISTRY_GITLAB/eo-containers/python
+  EO_CONTAINERS: $REGISTRY_GITLAB/eo-containers
   EOSETS_CHANGES: eosets/**/[^_]*.{py,xml}
 
 lint:
@@ -22,7 +21,7 @@ lint:
     - when: always
 
 pytest:
-  image: $EEO_DEPS:latest
+  image: $EO_CONTAINERS:geo_latest
   stage: test
   variables:
     CI_EOSETS_USE_S3: "0"
@@ -54,7 +53,7 @@ pytest:
   needs: [ "lint" ]
 
 pytest_s3:
-  image: $EEO_DEPS:latest
+  image: $EO_CONTAINERS:geo_latest
   stage: test
   variables:
     CI_EOSETS_USE_S3: "1"
