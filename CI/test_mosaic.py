@@ -1,4 +1,5 @@
 """ Testing mosaics """
+
 import os
 import tempfile
 
