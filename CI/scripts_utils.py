@@ -1,4 +1,5 @@
 """ Utils module for scripts """
+
 import logging
 import os
 from typing import Any
