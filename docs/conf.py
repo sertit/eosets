@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
 import eosets
 
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = "3"
+needs_sphinx = "7"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -36,29 +35,12 @@ myst_enable_extensions = [
     "substitution",
 ]
 
-# Autodoc
-autodoc_default_options = {
-    'member-order': 'groupwise',
-    'show-inheritance': True,
-}
-
 # Notebook integration parameters
 nb_execution_mode = "cache"
-nb_execution_timeout = -1
-
-# Manage new READTHEDOCS output mechanism
-cache_path = os.getenv('READTHEDOCS_OUTPUT')
-if cache_path is not None:
-    nb_execution_cache_path = f"{cache_path}/../docs/_build/.jupyter_cache"
-# Merge stderr and stdout
-nb_merge_streams = True
+nb_execution_timeout = 3600
 
 # This is going to generate a banner on top of each notebook
 nbsphinx_prolog = ""
-
-# Signature noise
-python_use_unqualified_type_names = True
-autodoc_typehints_format = "short"
 
 # sphinx-copybutton configurations
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
@@ -70,14 +52,6 @@ autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
-
-# The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-source_suffix = {
-    '.rst': 'restructuredtext',
-    '.ipynb': 'myst-nb',
-    '.myst': 'myst-nb',
-}
 
 # The master toctree document.
 master_doc = "index"
@@ -93,6 +67,7 @@ author = eosets.__author__
 #
 # The short X.Y version.
 version = eosets.__version__
+
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -112,7 +87,6 @@ exclude_patterns = [
     "_build",
     "Thumbs.db",
     ".DS_Store",
-    "__init__.py",
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -144,7 +118,6 @@ html_favicon = "_static/favicon.png"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-html_css_files = ["custom.css"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -158,68 +131,14 @@ html_last_updated_fmt = today_fmt
 # Output file base name for HTML help builder.
 htmlhelp_basename = "eosetsdoc"
 
-# -- Options for LaTeX output ---------------------------------------------
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (
-        master_doc,
-        "eosets.tex",
-        "EOSets Documentation",
-        "ICube-SERTIT",
-        "manual",
-    )
-]
-
-# -- Options for manual page output ---------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "eosets", "EOSets Documentation", [author], 1)]
-
-# -- Options for Texinfo output -------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "eosets",
-        "EOSets Documentation",
-        author,
-        "eosets",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
-
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "https://docs.python.org/3/": None,
-    "https://docs.python-requests.org/en/master/": None,
+    "python": ("https://docs.python.org/3/", None),
+    "python-request": ("https://docs.python-requests.org/en/master/", None),
 }
 
 add_function_parentheses = False
 add_module_names = False
-modindex_common_prefix = ["eosets."]
 
 
 def _html_page_context(app, pagename, templatename, context, doctree):

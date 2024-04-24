@@ -1,6 +1,5 @@
 # Release History
 
-
 ## 0.2.0 (2023-MM-DD)
 
 - **BREAKING CHANGE**: Switching from `pivot`/`child` to `reference`/`secondary`
@@ -13,6 +12,7 @@
 - CI: Test Pair without secondary and Mosaic and Series with only one product
 - CI: Update pre-commit hooks
 - CI: Enabling pre-commit.ci and dependabot bots
+- DOC: Update doc and notebooks
 
 ## 0.1.0 (2023-07-19)
 
