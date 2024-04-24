@@ -5,7 +5,7 @@ import os
 from typing import Any
 
 from eoreader.reader import Reader
-from sertit import AnyPath, ci
+from sertit import AnyPath, ci, unistra
 
 from eosets import EOSETS_NAME
 from eosets.utils import AnyPathType
@@ -33,13 +33,13 @@ def get_ci_db_dir() -> AnyPathType:
     """
     if int(os.getenv(CI_EOSETS_S3, 0)):
         # ON S3
-        ci.define_s3_client()
+        unistra.define_s3_client()
         return AnyPath("s3://sertit-eosets-ci")
     else:
         # ON DISK
         try:
             # CI
-            return AnyPath(ci.get_db3_path(), "CI", "eosets")
+            return AnyPath(unistra.get_db3_path(), "CI", "eosets")
         except NotADirectoryError:
             # Windows
             path = AnyPath(r"//ds2/database03/CI/eosets")
@@ -61,7 +61,7 @@ def get_db_dir_on_disk() -> AnyPathType:
 
     if not db_dir.is_dir():
         try:
-            db_dir = AnyPath(ci.get_db2_path(), "BASES_DE_DONNEES")
+            db_dir = AnyPath(unistra.get_db2_path(), "BASES_DE_DONNEES")
         except NotADirectoryError:
             db_dir = AnyPath("/home", "ds2_db2", "BASES_DE_DONNEES")
 
@@ -81,7 +81,7 @@ def get_db_dir() -> AnyPathType:
 
     if int(os.getenv(CI_EOSETS_S3, 0)):
         # ON S3
-        ci.define_s3_client()
+        unistra.define_s3_client()
         return AnyPath("s3://sertit-geodatastore")
     else:
         # ON DISK

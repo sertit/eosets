@@ -192,7 +192,7 @@ class Set:
         self._manage_output()
 
         # Move all files from old process folder into the new one
-        for file in files.listdir_abspath(old_tmp_process):
+        for file in path.listdir_abspath(old_tmp_process):
             try:
                 shutil.move(str(file), self._tmp_process)
             except shutil.Error:

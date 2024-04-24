@@ -23,4 +23,4 @@ AnyPathType = types.AnyPathType
 
 read = utils.read
 write = utils.write
-stack = utils.stack_dict
+stack = utils.stack

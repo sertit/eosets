@@ -465,7 +465,7 @@ class Mosaic(Set):
             nodata = kwargs.get("nodata", UINT16_NODATA)
         else:
             nodata = kwargs.get("nodata", self.nodata)
-        stk, dtype = stack(bands, band_ds, save_as_int, nodata, **kwargs)
+        stk, dtype = stack(band_ds, save_as_int, nodata, **kwargs)
 
         # Update stack's attributes
         stk = self._update_attrs(stk, bands, **kwargs)

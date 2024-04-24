@@ -2,6 +2,7 @@
 
 ## 0.3.0 (2024-mm-dd)
 
+- FIX: Remove deprecation warnings from other libs (`sertit`, `eoreader`)
 - CI: rename `CI` in `ci`
 
 ## 0.2.0 (2024-04-24)
