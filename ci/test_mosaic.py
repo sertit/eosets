@@ -8,7 +8,7 @@ from eoreader.bands import RED
 from eoreader.env_vars import DEM_PATH
 from sertit import ci
 
-from CI.scripts_utils import compare_geom, data_folder, get_db_dir, mosaic_folder
+from ci.scripts_utils import compare_geom, data_folder, get_db_dir, mosaic_folder
 from eosets import Mosaic
 from eosets.exceptions import IncompatibleProducts
 

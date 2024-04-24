@@ -1,6 +1,10 @@
 # Release History
 
-## 0.2.0 (2023-04-24)
+## 0.3.0 (2024-mm-dd)
+
+- CI: rename `CI` in `ci`
+
+## 0.2.0 (2024-04-24)
 
 - **BREAKING CHANGE**: Switching from `pivot`/`child` to `reference`/`secondary`
 - **BREAKING CHANGE**: Switching from `ruling` to `reference`

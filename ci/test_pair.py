@@ -6,7 +6,7 @@ import pytest
 from eoreader.bands import RED
 from sertit import ci
 
-from CI.scripts_utils import compare_geom, data_folder, pair_folder
+from ci.scripts_utils import compare_geom, data_folder, pair_folder
 from eosets.exceptions import IncompatibleProducts
 from eosets.pair import Pair
 

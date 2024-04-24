@@ -31,7 +31,7 @@ pytest:
     - pip install -r requirements.txt
     - pip install -e .
   script:
-    - pytest -v --durations=0 --cov-report term --cov-report html:${CI_PROJECT_DIR}/cov.html --cov=eosets --cov-config=.coveragerc CI --log-cli-level DEBUG --capture=tee-sys
+    - pytest -v --durations=0 --cov-report term --cov-report html:${CI_PROJECT_DIR}/cov.html --cov=eosets --cov-config=.coveragerc ci --log-cli-level DEBUG --capture=tee-sys
   artifacts:
     paths:
       - ${CI_PROJECT_DIR}/cov.html
@@ -47,7 +47,7 @@ pytest:
       when: never
     - changes:
         - EOSETS_CHANGES
-        - CI/**/*.{py,xml}
+        - ci/**/*.{py,xml}
         - .gitlab-ci.yml
         - pytest.ini
   needs: [ "lint" ]
@@ -63,7 +63,7 @@ pytest_s3:
     - pip install -r requirements.txt
     - pip install -e .
   script:
-    - pytest -v --durations=0 --cov-report term --cov-report html:${CI_PROJECT_DIR}/cov_s3.html --cov=eosets --cov-config=.coveragerc CI --log-cli-level DEBUG --capture=tee-sys
+    - pytest -v --durations=0 --cov-report term --cov-report html:${CI_PROJECT_DIR}/cov_s3.html --cov=eosets --cov-config=.coveragerc ci --log-cli-level DEBUG --capture=tee-sys
   artifacts:
     paths:
       - ${CI_PROJECT_DIR}/cov_s3.html
@@ -79,7 +79,7 @@ pytest_s3:
       when: never
     - changes:
         - EOSETS_CHANGES
-        - CI/**/*.{py,xml}
+        - ci/**/*.{py,xml}
         - .gitlab-ci.yml
         - pytest.ini
   needs: [ "lint" ]
