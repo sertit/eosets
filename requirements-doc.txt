@@ -1,7 +1,7 @@
 -r requirements.txt
 
 # Doc
-sphinx<6.0.0  # workaround
+sphinx
 ipython  # workaround
 sphinx-book-theme
 sphinx-copybutton
@@ -18,6 +18,3 @@ geoviews
 pystac[validation]
 eodag
 folium
-
-# workaround for sphinx v6
-# jinja2==3.0.3
