@@ -1,5 +1,3 @@
-import os
-
 import setuptools
 
 from eosets.__meta__ import (
@@ -12,9 +10,8 @@ from eosets.__meta__ import (
     __version__,
 )
 
-BASEDIR = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-with open(os.path.join(BASEDIR, "README.md"), "r", encoding="utf8") as f:
-    readme = f.read()
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
 setuptools.setup(
     name=__title__,
@@ -22,7 +19,7 @@ setuptools.setup(
     author=__author__,
     author_email=__author_email__,
     description=__description__,
-    long_description=readme,
+    long_description=long_description,
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
     install_requires=[
@@ -40,8 +37,8 @@ setuptools.setup(
         "validators",
         "methodtools",
         "dicttoxml",
-        "eoreader>0.20.0",
-        "sertit[full]>=1.27.3",
+        "eoreader>=0.21.1",
+        "sertit[full]>=1.36.1",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
