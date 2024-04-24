@@ -1,6 +1,6 @@
 # Release History
 
-## 0.2.0 (2023-MM-DD)
+## 0.2.0 (2023-04-24)
 
 - **BREAKING CHANGE**: Switching from `pivot`/`child` to `reference`/`secondary`
 - **BREAKING CHANGE**: Switching from `ruling` to `reference`
