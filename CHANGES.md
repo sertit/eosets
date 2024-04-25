@@ -5,6 +5,7 @@
 - FIX: Fix loading difference of bands with a Pair without a reference band
 - FIX: Remove deprecation warnings from other libs (`sertit`, `eoreader`)
 - CI: rename `CI` in `ci`
+- DOC: Fix caching notebooks in readthedocs
 
 ## 0.2.0 (2024-04-24)
 

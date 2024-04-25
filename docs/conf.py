@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import eosets
+import os
 
 # -- General configuration ------------------------------------------------
 
@@ -38,6 +39,11 @@ myst_enable_extensions = [
 # Notebook integration parameters
 nb_execution_mode = "cache"
 nb_execution_timeout = 3600
+
+# Manage new READTHEDOCS output mechanism
+cache_path = os.getenv('READTHEDOCS_OUTPUT')
+if cache_path is not None:
+    nb_execution_cache_path = f"{cache_path}/../docs/_build/.jupyter_cache"
 
 # This is going to generate a banner on top of each notebook
 nbsphinx_prolog = ""
@@ -104,7 +110,7 @@ html_theme = "sphinx_book_theme"
 # documentation.
 html_theme_options = {
     "repository_url": eosets.__url__,
-    "repository_branch": "master",
+    "repository_branch": "main",
     "path_to_docs": "docs",
     "repository_provider": "custom"
 }
