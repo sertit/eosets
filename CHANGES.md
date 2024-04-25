@@ -1,6 +1,6 @@
 # Release History
 
-## 0.3.0 (2024-mm-dd)
+## 0.2.1 (2024-04-25)
 
 - FIX: Fix loading difference of bands with a Pair without a reference band
 - FIX: Remove deprecation warnings from other libs (`sertit`, `eoreader`)
