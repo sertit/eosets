@@ -2,6 +2,7 @@
 
 ## 0.3.0 (2024-mm-dd)
 
+- FIX: Fix loading difference of bands with a Pair without a reference band
 - FIX: Remove deprecation warnings from other libs (`sertit`, `eoreader`)
 - CI: rename `CI` in `ci`
 

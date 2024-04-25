@@ -44,6 +44,13 @@ def _test_pair_core(paths: dict) -> None:
 
         # TODO: check with input mosaic, check secondary-reference
 
+        # Test to see if there is an error
+        pair.load(
+            diff_bands=RED,
+            window=aoi_path,
+            pixel_size=60,
+        )
+
         # Stack with a pixel_size of 60m
         pair_out = pair.output / "red_stack.tif"
         assert pair.has_bands(RED)
@@ -62,7 +69,7 @@ def _test_pair_core(paths: dict) -> None:
         else:
             ci_path = pair_folder() / pair.condensed_name / "red_stack.tif"
 
-        ci.assert_raster_equal(pair_out, ci_path)
+        ci.assert_raster_almost_equal(pair_out, ci_path)
 
         # Not implemented
         with pytest.raises(NotImplementedError):

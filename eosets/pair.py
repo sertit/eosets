@@ -333,12 +333,6 @@ class Pair(Set):
             ref_bands_to_load, pixel_size=pixel_size, window=window, **kwargs
         )
 
-        ref_ds = ref_ds.drop_vars(
-            [band for band in ref_ds.keys() if band not in reference_bands]
-        )
-
-        ref_ds = self._update_xds_attrs(ref_ds, reference_bands)
-
         # Load secondary bands
         if self.has_secondary:
             sec_ds: xr.Dataset = self.secondary_mosaic.load(
@@ -353,7 +347,7 @@ class Pair(Set):
                 )
                 if exists:
                     diff_arr = read(
-                        path=diff_path,
+                        diff_path,
                         pixel_size=pixel_size,
                         resampling=resampling,
                         **kwargs,
@@ -390,7 +384,7 @@ class Pair(Set):
             # Collocate diff bands
             diff_dict = self._collocate_bands(diff_dict)
 
-            # Drop not wanted bands from reference and secondary datasets
+            # Drop not wanted bands from secondary dataset
             sec_ds = sec_ds.drop_vars(
                 [band for band in sec_ds.keys() if band not in secondary_bands]
             )
@@ -411,6 +405,14 @@ class Pair(Set):
         else:
             sec_ds = xr.Dataset()
             diff_ds = xr.Dataset()
+
+        # Update reference dataset
+        # Drop not wanted bands from reference dataset
+        ref_ds = ref_ds.drop_vars(
+            [band for band in ref_ds.keys() if band not in reference_bands]
+        )
+
+        ref_ds = self._update_xds_attrs(ref_ds, reference_bands)
 
         return ref_ds, sec_ds, diff_ds
 
