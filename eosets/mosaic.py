@@ -91,13 +91,8 @@ class Mosaic(Set):
         # Update products of the mosaic
         self._manage_prods(paths, contiguity_check, **kwargs)
 
-        # Fill attributes
-        self.nodata = self.get_attr("nodata", **kwargs)
-        self.pixel_size = self.get_attr("pixel_size", **kwargs)
-        self.crs = self.get_attr("crs", **kwargs)
-        self.same_constellation: bool = self.is_homogeneous("constellation")
-        self.same_crs: bool = self.is_homogeneous("crs")
-        self.constellations = list(set(prod.constellation for prod in self.get_prods()))
+        # Post init at the set level
+        self.post_init(**kwargs)
 
     def clean_tmp(self):
         """

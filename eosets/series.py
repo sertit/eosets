@@ -122,12 +122,10 @@ class Series(Set):
         self._manage_mosaics(paths, contiguity_check, overlap_check)
 
         # Fill attributes
-        self.nodata = self.get_attr("nodata", **kwargs)
-        self.pixel_size = self.get_attr("pixel_size", **kwargs)
-        self.crs = self.get_attr("crs", **kwargs)
-        self.same_constellation = self.is_homogeneous("constellation")
-        self.constellations = list(set(prod.constellation for prod in self.get_prods()))
         self._unique_mosaic = len(self.get_prods()) == 1
+
+        # Post init at the set level
+        self.post_init(**kwargs)
 
     def clean_tmp(self):
         """

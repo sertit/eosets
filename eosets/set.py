@@ -26,7 +26,7 @@ from typing import Any, Tuple, Union
 import geopandas as gpd
 import xarray as xr
 from eoreader.bands import BandNames, to_str
-from eoreader.products import Product
+from eoreader.products import Product, SensorType
 from sertit import AnyPath, files, path
 from sertit.misc import ListEnum
 
@@ -111,6 +111,15 @@ class Set:
 
         self.constellations = None
         """ List of unique constellations constituting the set """
+
+        self.nof_prods: int = 0
+        """ Number of products. """
+
+        self.is_sar: bool = False
+        """ All products of this set are SAR data. """
+
+        self.is_optical: bool = False
+        """ All products of this set are Optical data. """
 
         self.nof_prods: int = 0
         """ Number of products. """
@@ -294,6 +303,38 @@ class Set:
             is_homogeneous = True
 
         return is_homogeneous
+
+    def _has_only_sar(self, **kwargs):
+        """Check if the set has only SAR products."""
+        return (
+            self.same_constellation
+            and self.get_attr("constellations", **kwargs) == SensorType.SAR
+        )
+
+    def _has_only_optical(self, **kwargs):
+        """Check if the set has only Optical products."""
+        return (
+            self.same_constellation
+            and self.get_attr("constellations", **kwargs) == SensorType.OPTICAL
+        )
+
+    def post_init(self, **kwargs):
+        """Post initialization as the set level."""
+        # Constellations
+        self.same_constellation = self.is_homogeneous("constellation")
+        self.constellations = list(set(prod.constellation for prod in self.get_prods()))
+
+        # CRS
+        self.crs = self.get_attr("crs", **kwargs)
+        self.same_crs = self.is_homogeneous("crs")
+
+        # Other
+        self.nodata = self.get_attr("nodata", **kwargs)
+        self.pixel_size = self.get_attr("pixel_size", **kwargs)
+
+        # Product types
+        self.is_sar = self._has_only_sar(**kwargs)
+        self.is_optical = self._has_only_optical(**kwargs)
 
     def get_first_prod(self) -> Product:
         """

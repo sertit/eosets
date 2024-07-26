@@ -106,11 +106,8 @@ class Pair(Set):
         self.condensed_name = self.full_name
         # TODO (how to name pair ???)
 
-        self.nodata = self.get_attr("nodata", **kwargs)
-        self.pixel_size = self.get_attr("pixel_size", **kwargs)
-        self.crs = self.get_attr("crs", **kwargs)
-        self.same_constellation = self.is_homogeneous("constellation")
-        self.constellations = list(set(prod.constellation for prod in self.get_prods()))
+        # Post init at the set level
+        self.post_init(**kwargs)
 
     def clean_tmp(self):
         """
