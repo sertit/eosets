@@ -30,7 +30,7 @@ from eoreader.bands import BandNames, is_spectral_band, to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
-from sertit import AnyPath, files, rasters
+from sertit import AnyPath, files, path, rasters
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType
 
@@ -137,9 +137,16 @@ class Mosaic(Set):
         Raises:
             IncompatibleProducts: Incompatible products if not contiguous or not the same date
         """
-        # Manage reference product
-        assert len(paths) > 0
-        if not isinstance(paths, list):
+        try:
+            ref_path = paths[0]
+            assert ref_path.is_path(
+                paths
+            ), "You should give paths to build your Mosaic!"
+        except (IndexError, TypeError):
+            assert path.is_path(
+                paths
+            ), "You should give at least one path for your Mosaic!"
+            ref_path = paths
             paths = [paths]
 
         # Remove EOReader tmp, the mosaic will save files in its tmp when needed
@@ -150,7 +157,7 @@ class Mosaic(Set):
 
         # Open first product as a reference
         first_prod: Product = READER.open(
-            paths[0],
+            ref_path,
             remove_tmp=remove_tmp,
             output_path=self._get_tmp_folder(writable=True),
             **kwargs,
@@ -163,16 +170,16 @@ class Mosaic(Set):
         self.prods[first_prod.condensed_name] = first_prod
 
         # Open others
-        for path in paths[1:]:
+        for prod_path in paths[1:]:
             prod: Product = READER.open(
-                path,
+                prod_path,
                 remove_tmp=remove_tmp,
                 output_path=self._get_tmp_folder(writable=True),
                 **kwargs,
             )
             if prod is None:
                 raise ValueError(
-                    f"There is no existing products in EOReader corresponding to {path}"
+                    f"There is no existing products in EOReader corresponding to {prod_path}"
                 )
 
             # Ensure compatibility of the mosaic component, i.e. unique date and contiguous product
@@ -390,15 +397,17 @@ class Mosaic(Set):
                 LOGGER.debug(f"Merging bands {to_str(band)[0]}")
                 if self.mosaic_method == MosaicMethod.VRT:
                     prod_path = []
-                    for path in prod_band_paths[band]:
-                        out_path, exists = self._get_out_path(os.path.basename(path))
+                    for prod_path in prod_band_paths[band]:
+                        out_path, exists = self._get_out_path(
+                            os.path.basename(prod_path)
+                        )
                         if not exists:
-                            if AnyPath(path).parent.is_relative_to(self.output):
+                            if AnyPath(prod_path).parent.is_relative_to(self.output):
                                 # If EOReader's band: move
-                                shutil.move(path, out_path)
+                                shutil.move(prod_path, out_path)
                             else:
                                 # If raw product's band: copy
-                                files.copy(path, out_path)
+                                files.copy(prod_path, out_path)
                         prod_path.append(out_path)
                 else:
                     prod_path = prod_band_paths[band]

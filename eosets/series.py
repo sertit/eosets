@@ -29,7 +29,7 @@ from eoreader.bands import BandNames, to_band, to_str
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
-from sertit import AnyPath
+from sertit import AnyPath, types
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType
 
@@ -105,7 +105,7 @@ class Series(Set):
         self.reference_mosaic = reference_mosaic
         """ Reference mosaic """
 
-        self._unique_mosaic = len(paths) == 1
+        self._unique_mosaic = None
 
         contiguity_check = GeometryCheck.convert_from(contiguity_check)[0]
         overlap_check = GeometryCheck.convert_from(overlap_check)[0]
@@ -120,9 +120,6 @@ class Series(Set):
 
         # Update mosaics of the pair
         self._manage_mosaics(paths, contiguity_check, overlap_check)
-
-        # Fill attributes
-        self._unique_mosaic = len(self.get_prods()) == 1
 
         # Post init at the set level
         self.post_init(**kwargs)
@@ -182,7 +179,9 @@ class Series(Set):
 
         """
         # Information regarding the pair composition
-        assert isinstance(mosaic_paths, list)
+        assert types.is_iterable(
+            mosaic_paths
+        ), "You should give a list of paths or Mosaics to create your Series!"
 
         self.mosaics: list[Mosaic] = []
         for paths in mosaic_paths:
@@ -225,6 +224,8 @@ class Series(Set):
         self.id = "_".join(mos.id for mos in self.mosaics)
         self.full_name = "_".join(mos.full_name for mos in self.mosaics)
         self.condensed_name = self.full_name
+
+        self._unique_mosaic = len(self.mosaics) == 1
         # TODO (how to name series ???)
 
     @property
