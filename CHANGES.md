@@ -3,6 +3,7 @@
 ## 0.3.0
 
 - **ENH: Add `is_sar` and `is_optical` member to any `Set`**
+- FIX: Fix Mosaic stacking with multi-resolution constellations ([#6](https://github.com/sertit/eoreader/issues/6))
 
 ## 0.2.1 (2024-04-25)
 

@@ -359,6 +359,10 @@ class Mosaic(Set):
                     f"*** Loading {to_str(bands_to_load)} for {prod.condensed_name} ***"
                 )
 
+                # Don't leave it to None to ensure looking for the correct band name multi-resolution constellations (i.e. SWIR to 10m)
+                if pixel_size is None:
+                    pixel_size = prod.pixel_size
+
                 # Load bands
                 prod.load(bands_to_load, pixel_size, **kwargs).keys()
 
