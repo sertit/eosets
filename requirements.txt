@@ -12,6 +12,7 @@ tempenv
 twine
 
 # Formats
+numpy>=2.0.0
 lxml
 zarr
 h5netcdf
@@ -30,7 +31,7 @@ rioxarray>=0.10.0
 
 # Vector libs
 rtree
-geopandas>=0.11.0
+geopandas>=1.0.0
 
 # Spectral indices
 spyndex>=0.3.0
@@ -43,5 +44,5 @@ methodtools
 matplotlib
 
 # Sertit libs
-eoreader>=0.20.4
-sertit[full] >= 1.32.3
+eoreader>=0.21.2
+sertit[full] >= 1.39.1
