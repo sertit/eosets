@@ -121,3 +121,7 @@ def compare_geom(geom_type: str, obj: Any, obj_folder: AnyPathType, on_disk: boo
     except AssertionError:
         LOGGER.warning("Extent not equal, trying almost equal.")
         ci.assert_geom_almost_equal(geom_ci_path, geom_out)
+
+
+def s3_env(*args, **kwargs):
+    return unistra.s3_env(use_s3_env_var=CI_EOSETS_S3, *args, **kwargs)

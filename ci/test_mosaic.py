@@ -8,7 +8,13 @@ from eoreader.bands import RED
 from eoreader.env_vars import DEM_PATH
 from sertit import ci
 
-from ci.scripts_utils import compare_geom, data_folder, get_db_dir, mosaic_folder
+from ci.scripts_utils import (
+    compare_geom,
+    data_folder,
+    get_db_dir,
+    mosaic_folder,
+    s3_env,
+)
 from eosets import Mosaic
 from eosets.exceptions import IncompatibleProducts
 
@@ -17,6 +23,7 @@ ci.reduce_verbosity()
 ON_DISK = False
 
 
+@s3_env
 def test_s2_mosaic():
     """Test mosaic object with Sentinel-2 products"""
     dem_sub_dir_path = ["GLOBAL", "COPDEM_30m", "COPDEM_30m.vrt"]
@@ -82,6 +89,7 @@ def test_s2_mosaic():
         mosaic.clean_tmp()
 
 
+@s3_env
 def test_mono_mosaic():
     """Test mosaic object with Sentinel-2 products (only one product)"""
 

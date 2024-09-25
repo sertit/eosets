@@ -6,7 +6,7 @@ import pytest
 from eoreader.bands import RED
 from sertit import ci
 
-from ci.scripts_utils import compare_geom, data_folder, pair_folder
+from ci.scripts_utils import compare_geom, data_folder, pair_folder, s3_env
 from eosets.exceptions import IncompatibleProducts
 from eosets.pair import Pair
 
@@ -80,6 +80,7 @@ def _test_pair_core(paths: dict) -> None:
         pair.clean_tmp()
 
 
+@s3_env
 def test_s2_pair():
     """Test pair object with Sentinel-2 products"""
     s2_paths = {
@@ -95,6 +96,7 @@ def test_s2_pair():
     _test_pair_core(s2_paths)
 
 
+@s3_env
 def test_s3_pair():
     """Test pair object with Sentinel-3 products"""
     s3_paths = {
@@ -110,6 +112,7 @@ def test_s3_pair():
     _test_pair_core(s3_paths)
 
 
+@s3_env
 def test_l8_pair():
     """Test pair object with Landsat-8 products"""
     l8_paths = {
@@ -123,6 +126,7 @@ def test_l8_pair():
     _test_pair_core(l8_paths)
 
 
+@s3_env
 def test_pair_no_secondary():
     """Test pair object with Landsat-8 products"""
     l8_paths = {
@@ -133,6 +137,7 @@ def test_pair_no_secondary():
     _test_pair_core(l8_paths)
 
 
+@s3_env
 def test_pair_fail():
     """Test failure for pair objects"""
     paths = {

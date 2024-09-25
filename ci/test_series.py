@@ -6,7 +6,7 @@ import pytest
 from eoreader.bands import RED
 from sertit import ci
 
-from ci.scripts_utils import compare_geom, data_folder, series_folder
+from ci.scripts_utils import compare_geom, data_folder, s3_env, series_folder
 from eosets import Series
 from eosets.exceptions import IncompatibleProducts
 
@@ -15,6 +15,7 @@ ci.reduce_verbosity()
 ON_DISK = False
 
 
+@s3_env
 def test_s2_series():
     """Test series object with Sentinel-2 products"""
     s2_paths = [
@@ -83,6 +84,7 @@ def test_s2_series():
         series.clean_tmp()
 
 
+@s3_env
 def test_mono_series():
     """Test series object with Sentinel-2 products (only one mosaic)"""
     s2_paths = [
