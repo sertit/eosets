@@ -10,7 +10,10 @@ jobs:
   build-n-publish:
     name: Build and publish to PyPI
     runs-on: ubuntu-latest
-
+    environment:
+      name: release
+    permissions:
+          id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -20,7 +23,7 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Check that the current version isn't already on PyPi
+      - name: Check that the current version isn't already on PyPI
         run: |
           if [ "$(./get_pypi_latest_version.sh)" != "$(python setup.py --version)" ]
           then
@@ -36,6 +39,3 @@ jobs:
           python setup.py sdist bdist_wheel
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: ${{ secrets.PYPI_TOKEN }}
-          password: ${{ secrets.PYPI_PWD }}
