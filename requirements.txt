@@ -20,18 +20,20 @@ dicttoxml
 
 # Paths
 validators
-cloudpathlib>=0.10.0
+cloudpathlib[s3]>=0.12.1
 
 # Raster libs
 scipy
 pyresample
-rasterio>=1.3.0
-xarray>=0.18.0
+rasterio>=1.3.10  # numpy >= 2
+xarray>=2024.06.0  # numpy >= 2
 rioxarray>=0.10.0
+odc-geo>=0.4.6
 
 # Vector libs
 rtree
-geopandas>=1.0.0
+geopandas>=0.14.4
+shapely>=2.0.0
 
 # Spectral indices
 spyndex>=0.3.0
@@ -44,5 +46,5 @@ methodtools
 matplotlib
 
 # Sertit libs
-eoreader>=0.21.2
-sertit[full] >= 1.39.1
+eoreader>=0.21.3
+sertit[full]>=1.42.2

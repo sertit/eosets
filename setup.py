@@ -26,10 +26,11 @@ setuptools.setup(
         "lxml",
         "h5netcdf",
         "scipy",
-        "rasterio>=1.3.0",
-        "xarray>=0.18.0",
+        "rasterio>=1.3.10",  # numpy >= 2
+        "xarray>=2024.06.0",  # numpy >= 2
         "rioxarray>=0.10.0",
-        "geopandas>=0.11.0",
+        "odc-geo>=0.4.6",
+        "geopandas>=0.14.4",
         "spyndex>=0.3.0",
         "pyresample",
         "zarr",
@@ -37,8 +38,8 @@ setuptools.setup(
         "validators",
         "methodtools",
         "dicttoxml",
-        "eoreader>=0.21.1",
-        "sertit[full]>=1.36.1",
+        "eoreader>=0.21.3",
+        "sertit[full]>=1.42.2",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",

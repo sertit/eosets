@@ -1,8 +1,8 @@
 # Release History
 
-## 0.3.0 (2024-mm-dd)
+## 0.2.2 (2024-10-08)
 
-- **ENH: Add `is_sar` and `is_optical` member to any `Set`**
+- ENH: Add `is_sar` and `is_optical` member to any `Set`
 - FIX: Fix Mosaic stacking with multi-resolution constellations ([#6](https://github.com/sertit/eoreader/issues/6))
 - CI: Test with S3-stored products
 - PUBLISH: Use PyPI's Trusted Publisher Management mechanism
