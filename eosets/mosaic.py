@@ -139,9 +139,7 @@ class Mosaic(Set):
         """
         try:
             ref_path = paths[0]
-            assert ref_path.is_path(
-                paths
-            ), "You should give paths to build your Mosaic!"
+            assert path.is_path(ref_path), "You should give paths to build your Mosaic!"
         except (IndexError, TypeError):
             assert path.is_path(
                 paths
@@ -396,7 +394,7 @@ class Mosaic(Set):
             if not output_path.is_file():
                 LOGGER.debug(f"Merging bands {to_str(band)[0]}")
                 if self.mosaic_method == MosaicMethod.VRT:
-                    prod_path = []
+                    prod_paths = []
                     for prod_path in prod_band_paths[band]:
                         out_path, exists = self._get_out_path(
                             os.path.basename(prod_path)
@@ -408,12 +406,12 @@ class Mosaic(Set):
                             else:
                                 # If raw product's band: copy
                                 files.copy(prod_path, out_path)
-                        prod_path.append(out_path)
+                        prod_paths.append(out_path)
                 else:
-                    prod_path = prod_band_paths[band]
+                    prod_paths = prod_band_paths[band]
 
                 # Don't pass kwargs here because of unwanted errors
-                merge_fct(prod_path, output_path)
+                merge_fct(prod_paths, output_path)
 
             # Load in memory and update attribute
             merged_dict[band] = self._update_attrs(
