@@ -1,6 +1,6 @@
 # Release History
 
-## 0.2.3 (2024-mm-dd)
+## 0.2.3 (2024-10-16)
 
 - FIX: Fix band retrieving when the env variable `CI_EOREADER_BAND_FOLDER` is set
 
