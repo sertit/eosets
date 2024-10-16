@@ -378,12 +378,22 @@ class Mosaic(Set):
                             band
                         ]
                     else:
+                        band_regex = f"*_{to_str(band)[0]}_*"
                         # Use glob fct as _get_band_folder is a tmpDirectory
-                        band_path = glob(
-                            os.path.join(
-                                prod._get_band_folder(), f"*_{to_str(band)[0]}_*"
-                            )
-                        )[0]
+                        try:
+                            # Check if the band exists in a non-writable directory
+                            band_path = glob(
+                                os.path.join(
+                                    prod._get_band_folder(writable=False), band_regex
+                                )
+                            )[0]
+                        except IndexError:
+                            # Check if the band exists in a writable directory
+                            band_path = glob(
+                                os.path.join(
+                                    prod._get_band_folder(writable=True), band_regex
+                                )
+                            )[0]
 
                     prod_band_paths[band].append(str(band_path))
 

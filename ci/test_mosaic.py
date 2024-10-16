@@ -4,9 +4,10 @@ import os
 import tempfile
 
 import pytest
-from eoreader.bands import RED
-from eoreader.env_vars import DEM_PATH
+from eoreader.bands import NBR, NDVI, RED
+from eoreader.env_vars import CI_EOREADER_BAND_FOLDER, DEM_PATH
 from sertit import ci
+from tempenv import tempenv
 
 from ci.scripts_utils import (
     compare_geom,
@@ -102,8 +103,25 @@ def test_mono_mosaic():
     # Create object
     mosaic = Mosaic([s2_32umu], mosaic_method="VRT")
     mosaic.stack(
-        [RED],
+        [NDVI],
         pixel_size=600,
     )
 
     # Just see if this doesn't fail
+
+
+def test_ci_eoreader_band_folder():
+    """Test mosaic with CI_EOREADER_BAND_FOLDER set to an arbitrary diretcory."""
+    with tempenv.TemporaryEnvironment({CI_EOREADER_BAND_FOLDER: str(data_folder())}):
+        # Get some Sentinel-2 paths
+        s2_32umu = (
+            data_folder()
+            / "S2B_MSIL2A_20220330T102619_N0400_R108_T32UMU_20220330T141833.SAFE"
+        )
+
+        # Create object
+        mosaic = Mosaic([s2_32umu], mosaic_method="VRT")
+        mosaic.stack(
+            [NBR],
+            pixel_size=600,
+        )

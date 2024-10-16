@@ -1,5 +1,9 @@
 # Release History
 
+## 0.2.3 (2024-mm-dd)
+
+- FIX: Fix band retrieving when the env variable `CI_EOREADER_BAND_FOLDER` is set
+
 ## 0.2.2 (2024-10-08)
 
 - ENH: Add `is_sar` and `is_optical` member to any `Set`
