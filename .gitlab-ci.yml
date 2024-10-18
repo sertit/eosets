@@ -46,7 +46,7 @@ pytest:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: never
     - changes:
-        - EOSETS_CHANGES
+        - $EOSETS_CHANGES
         - ci/**/*.{py,xml}
         - .gitlab-ci.yml
         - pytest.ini
@@ -78,7 +78,7 @@ pytest_s3:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: never
     - changes:
-        - EOSETS_CHANGES
+        - $EOSETS_CHANGES
         - ci/**/*.{py,xml}
         - .gitlab-ci.yml
         - pytest.ini
