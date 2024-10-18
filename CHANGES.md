@@ -3,7 +3,8 @@
 ## 0.2.4 (2024-mm-dd)
 
 - FIX: Fix band retrieving when the env variable `CI_EOREADER_BAND_FOLDER` is set, in case of multiple files of the same band from different satellite data are present in the directory
-- 
+- FIX: Don't force set `remove_tmp` to `True` for `eoreader.Product` in `Mosaic`.
+
 ## 0.2.3 (2024-10-16)
 
 - FIX: Fix band retrieving when the env variable `CI_EOREADER_BAND_FOLDER` is set

@@ -147,16 +147,13 @@ class Mosaic(Set):
             ref_path = paths
             paths = [paths]
 
-        # Remove EOReader tmp, the mosaic will save files in its tmp when needed
-        remove_tmp = True
-
         # Nof prods (before checks)
         self.nof_prods = len(paths)
 
         # Open first product as a reference
         first_prod: Product = READER.open(
             ref_path,
-            remove_tmp=remove_tmp,
+            remove_tmp=self._remove_tmp,
             output_path=self._get_tmp_folder(writable=True),
             **kwargs,
         )
@@ -171,7 +168,7 @@ class Mosaic(Set):
         for prod_path in paths[1:]:
             prod: Product = READER.open(
                 prod_path,
-                remove_tmp=remove_tmp,
+                remove_tmp=self._remove_tmp,
                 output_path=self._get_tmp_folder(writable=True),
                 **kwargs,
             )
