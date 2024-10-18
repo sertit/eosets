@@ -378,7 +378,7 @@ class Mosaic(Set):
                             band
                         ]
                     else:
-                        band_regex = f"*_{to_str(band)[0]}_*"
+                        band_regex = f"*{prod.condensed_name}*_{to_str(band)[0]}_*"
                         # Use glob fct as _get_band_folder is a tmpDirectory
                         try:
                             # Check if the band exists in a non-writable directory
