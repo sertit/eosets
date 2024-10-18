@@ -399,26 +399,37 @@ class Mosaic(Set):
         for band in bands_path:
             output_path = bands_path[band]
             if not output_path.is_file():
-                LOGGER.debug(f"Merging bands {to_str(band)[0]}")
-                if self.mosaic_method == MosaicMethod.VRT:
-                    prod_paths = []
-                    for prod_path in prod_band_paths[band]:
-                        out_path, exists = self._get_out_path(
-                            os.path.basename(prod_path)
-                        )
-                        if not exists:
-                            if AnyPath(prod_path).parent.is_relative_to(self.output):
-                                # If EOReader's band: move
-                                shutil.move(prod_path, out_path)
-                            else:
-                                # If raw product's band: copy
-                                files.copy(prod_path, out_path)
-                        prod_paths.append(out_path)
-                else:
-                    prod_paths = prod_band_paths[band]
+                if self.nof_prods > 1:
+                    LOGGER.debug(f"Merging bands {to_str(band)[0]}")
+                    if self.mosaic_method == MosaicMethod.VRT:
+                        prod_paths = []
+                        for prod_path in prod_band_paths[band]:
+                            out_path, exists = self._get_out_path(
+                                os.path.basename(prod_path)
+                            )
+                            if not exists:
+                                if AnyPath(prod_path).parent.is_relative_to(
+                                    self.output
+                                ):
+                                    # If EOReader's band: move
+                                    shutil.move(prod_path, out_path)
+                                else:
+                                    # If raw product's band: copy
+                                    files.copy(prod_path, out_path)
+                            prod_paths.append(out_path)
+                    else:
+                        prod_paths = prod_band_paths[band]
 
-                # Don't pass kwargs here because of unwanted errors
-                merge_fct(prod_paths, output_path)
+                    # Don't pass kwargs here because of unwanted errors
+                    merge_fct(prod_paths, output_path)
+                else:
+                    prod_path = prod_band_paths[band][0]
+                    if AnyPath(prod_path).parent.is_relative_to(self.output):
+                        # If EOReader's band: move
+                        shutil.move(prod_path, output_path)
+                    else:
+                        # If raw product's band: copy
+                        files.copy(prod_path, output_path)
 
             # Load in memory and update attribute
             merged_dict[band] = self._update_attrs(
