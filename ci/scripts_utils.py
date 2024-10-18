@@ -106,6 +106,18 @@ def pair_folder() -> AnyPathType:
     return get_ci_db_dir() / "PAIR"
 
 
+def get_ci_data_dir() -> AnyPathType:
+    """
+    Get CI DATA directory (S3 bucket)
+    Returns:
+        AnyPathType: CI DATA directory
+    """
+    if len(os.getenv(ci.AWS_ACCESS_KEY_ID, "")) > 0:
+        return get_ci_db_dir().joinpath("CI_DATA")
+    else:
+        return get_ci_dir().joinpath("CI_DATA")
+
+
 def compare_geom(geom_type: str, obj: Any, obj_folder: AnyPathType, on_disk: bool):
     # Check extent
     geom_out = obj.output / f"{geom_type}.geojson"
@@ -125,3 +137,8 @@ def compare_geom(geom_type: str, obj: Any, obj_folder: AnyPathType, on_disk: boo
 
 def s3_env(*args, **kwargs):
     return unistra.s3_env(use_s3_env_var=CI_EOSETS_S3, *args, **kwargs)
+
+
+def get_copdem_30():
+    dem_sub_dir_path = ["GLOBAL", "COPDEM_30m", "COPDEM_30m.vrt"]
+    return str(get_db_dir().joinpath(*dem_sub_dir_path))

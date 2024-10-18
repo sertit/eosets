@@ -3,16 +3,63 @@ import os
 import tempfile
 
 import pytest
-from eoreader.bands import RED
+from eoreader.bands import BLUE, GREEN, NIR, PAN, RED
+from eoreader.env_vars import CI_EOREADER_BAND_FOLDER, DEM_PATH
 from sertit import ci
+from tempenv import tempenv
 
-from ci.scripts_utils import compare_geom, data_folder, pair_folder, s3_env
+from ci.scripts_utils import (
+    compare_geom,
+    data_folder,
+    get_ci_data_dir,
+    get_copdem_30,
+    pair_folder,
+    s3_env,
+)
 from eosets.exceptions import IncompatibleProducts
 from eosets.pair import Pair
 
 ci.reduce_verbosity()
 
-ON_DISK = False
+ON_DISK = True
+
+
+@s3_env
+def test_pair_non_ortho_with_window():
+    """Test pair non-ortho native with a window"""
+    # DO NOT REPROJECT BANDS --> WAY TOO SLOW
+    with tempenv.TemporaryEnvironment(
+        {DEM_PATH: get_copdem_30(), CI_EOREADER_BAND_FOLDER: str(get_ci_data_dir())}
+    ):
+        aoi = data_folder() / "psh_pld_aoi.shp"
+        pld_paths = {
+            "reference_paths": [data_folder() / "IMG_PHR1A_P_001"],
+            "secondary_paths": [data_folder() / "IMG_PHR1A_MS_004"],
+        }
+
+        with tempfile.TemporaryDirectory() as output:
+            if ON_DISK:
+                output = r"/mnt/ds2_db3/CI/eosets/PAIR"
+
+            pld_pair = Pair(**pld_paths, window=aoi, remove_tmp=not ON_DISK)
+            pld_pair.output = os.path.join(output, pld_pair.condensed_name)
+
+            ms_path = pld_pair.output / "rgbn_stack.tif"
+            pan_path = pld_pair.output / "pan_stack.tif"
+
+            # RGBN
+            rgbn_stck = pld_pair.secondary_mosaic.stack(
+                [RED, GREEN, BLUE, NIR], stack_path=ms_path, window=aoi
+            )
+            ci.assert_val(rgbn_stck.rio.resolution()[0], 2.0, "RGBN resolution")
+            ci.assert_val(rgbn_stck.rio.count, 4, "RGBN number of bands")
+
+            # PAN
+            pan_stck = pld_pair.reference_mosaic.stack(
+                [PAN], stack_path=pan_path, window=aoi
+            )
+            ci.assert_val(pan_stck.rio.resolution()[0], 0.5, "PAN resolution")
+            ci.assert_val(pan_stck.rio.count, 1, "PAN number of bands")
 
 
 def _test_pair_core(paths: dict) -> None:
@@ -154,3 +201,26 @@ def test_pair_fail():
     # Fails with not overlapping products
     with pytest.raises(IncompatibleProducts):
         Pair(**paths)
+
+
+# @s3_env
+# def test_pair_multi_res():
+#     """ Test mosaic multi res with a window """
+#     # DO NOT REPROJECT BANDS --> WAY TOO SLOW
+#     with tempenv.TemporaryEnvironment(
+#             {
+#                 CI_EOREADER_BAND_FOLDER: str(get_ci_data_dir())
+#             }
+#     ):
+#         l9_paths = {
+#             "reference_paths": [
+#                 data_folder() / "LC09_L1TP_200030_20220201_20220201_02_T1.tar",
+#             ],
+#         }
+#
+#         with tempfile.TemporaryDirectory() as output:
+#             if ON_DISK:
+#                 output = r"/mnt/ds2_db3/CI/eosets/PAIR"
+#
+#             l9_pair = Pair(**l9_paths, remove_tmp=not ON_DISK)
+#             l9_pair.output = os.path.join(output, l9_pair.condensed_name)
