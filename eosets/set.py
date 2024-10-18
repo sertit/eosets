@@ -26,6 +26,7 @@ from typing import Any, Tuple, Union
 import geopandas as gpd
 import xarray as xr
 from eoreader.bands import BandNames, to_str
+from eoreader.env_vars import CI_EOREADER_BAND_FOLDER
 from eoreader.products import Product, SensorType
 from sertit import AnyPath, files, path
 from sertit.misc import ListEnum
@@ -224,7 +225,9 @@ class Set:
 
         # Manage CI bands (when we do not write anything, read only)
         if not writable:
-            ci_tmp_folder = os.environ.get(CI_EOSETS_BAND_FOLDER)
+            ci_tmp_folder = os.environ.get(
+                CI_EOSETS_BAND_FOLDER, os.environ.get(CI_EOREADER_BAND_FOLDER)
+            )
             if ci_tmp_folder:
                 ci_tmp_folder = AnyPath(ci_tmp_folder)
                 if ci_tmp_folder.is_dir():

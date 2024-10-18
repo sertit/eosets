@@ -315,7 +315,14 @@ class Mosaic(Set):
 
     def _get_band_suffix(self):
         """Get the band suffix"""
-        return f"{self.mosaic_method.name.lower()}"
+        # For multiple products, a mosaic is needed
+        if self.nof_prods > 1:
+            suffix = f"{self.mosaic_method.name.lower()}"
+
+        # For one product, just copy the raster band so set it to tif
+        else:
+            suffix = "tif"
+        return suffix
 
     def load(
         self,

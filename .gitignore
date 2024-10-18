@@ -27,3 +27,7 @@ docs/api
 
 # Dask
 dask-worker-space/*
+
+
+# CI
+ci/ci_output

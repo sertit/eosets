@@ -4,15 +4,28 @@ import tempfile
 
 import pytest
 from eoreader.bands import RED
+from eoreader.env_vars import CI_EOREADER_BAND_FOLDER
 from sertit import ci
+from tempenv import tempenv
 
-from ci.scripts_utils import compare_geom, data_folder, s3_env, series_folder
+from ci.scripts_utils import (
+    compare_geom,
+    data_folder,
+    get_ci_data_dir,
+    get_output,
+    s3_env,
+    series_folder,
+)
 from eosets import Series
 from eosets.exceptions import IncompatibleProducts
 
 ci.reduce_verbosity()
 
 ON_DISK = False
+
+
+def get_ci_series_data_dir():
+    return str(get_ci_data_dir() / "SERIES")
 
 
 @s3_env
@@ -30,75 +43,84 @@ def test_s2_series():
     ]
     aoi_path = data_folder() / "Fire_Spain.geojson"
 
-    with tempfile.TemporaryDirectory() as output:
-        if ON_DISK:
-            output = r"/mnt/ds2_db3/CI/eosets/SERIES"
+    with tempenv.TemporaryEnvironment(
+        {CI_EOREADER_BAND_FOLDER: get_ci_series_data_dir()}
+    ):
+        with tempfile.TemporaryDirectory() as output:
+            output = get_output(output, "SERIES", ON_DISK)
 
-        # Try with same datetime
-        with pytest.raises(IncompatibleProducts):
-            Series([s2_paths[0], s2_paths[0]])
+            # Try with same datetime
+            with pytest.raises(IncompatibleProducts):
+                Series([s2_paths[0], s2_paths[0]])
 
-        # Try with non-overlapping products
-        with pytest.raises(IncompatibleProducts):
-            Series(
-                [
-                    s2_paths[0],
+            # Try with non-overlapping products
+            with pytest.raises(IncompatibleProducts):
+                Series(
                     [
-                        data_folder()
-                        / "S2B_MSIL2A_20220228T102849_N0400_R108_T32ULU_20220228T134712.SAFE"
-                    ],
-                ]
-            )
+                        s2_paths[0],
+                        [
+                            data_folder()
+                            / "S2B_MSIL2A_20220228T102849_N0400_R108_T32ULU_20220228T134712.SAFE"
+                        ],
+                    ]
+                )
 
-        # Create object
-        series = Series(paths=s2_paths)
-        series.output = os.path.join(output, series.condensed_name)
+            # Create object
+            series = Series(paths=s2_paths, remove_tmp=not ON_DISK)
+            series.output = os.path.join(output, series.condensed_name)
 
-        # Check extent
-        compare_geom("extent", series, series_folder(), ON_DISK)
+            # Check extent
+            compare_geom("extent", series, series_folder(), ON_DISK)
 
-        # Check footprint
-        compare_geom("footprint", series, series_folder(), ON_DISK)
+            # Check footprint
+            compare_geom("footprint", series, series_folder(), ON_DISK)
 
-        # TODO: check with input mosaic, different reference mosaic
+            # TODO: check with input mosaic, different reference mosaic
 
-        # Stack with a pixel_size of 60m
-        series_path = series.output / "red_stack.tif"
-        assert series.has_bands(RED)
-        series.stack(RED, window=aoi_path, pixel_size=60, stack_path=series_path)
+            # Stack with a pixel_size of 60m
+            series_path = series.output / "red_stack.tif"
+            assert series.has_bands(RED)
+            series.stack(RED, window=aoi_path, pixel_size=60, stack_path=series_path)
 
-        # Test it
-        if ON_DISK:
-            ci_path = series_path
-        else:
-            ci_path = series_folder() / series.condensed_name / "red_stack.tif"
+            # Test it
+            if ON_DISK:
+                ci_path = series_path
+            else:
+                ci_path = series_folder() / series.condensed_name / "red_stack.tif"
 
-        ci.assert_raster_equal(series_path, ci_path)
+            ci.assert_raster_equal(series_path, ci_path)
 
-        # Not implemented
-        with pytest.raises(NotImplementedError):
-            series.read_mtd()
+            # Not implemented
+            with pytest.raises(NotImplementedError):
+                series.read_mtd()
 
-        # Clean everything
-        series.clear()
-        series.clean_tmp()
+            # Clean everything
+            series.clear()
+            series.clean_tmp()
 
 
 @s3_env
 def test_mono_series():
     """Test series object with Sentinel-2 products (only one mosaic)"""
-    s2_paths = [
-        [
-            data_folder()
-            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
-        ],
-    ]
-    aoi_path = data_folder() / "Fire_Spain.geojson"
 
-    # Create object
-    series = Series(paths=s2_paths)
+    with tempenv.TemporaryEnvironment(
+        {CI_EOREADER_BAND_FOLDER: get_ci_series_data_dir()}
+    ):
+        with tempfile.TemporaryDirectory() as output:
+            output = get_output(output, "SERIES", ON_DISK)
+            s2_paths = [
+                [
+                    data_folder()
+                    / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
+                ],
+            ]
+            aoi_path = data_folder() / "Fire_Spain.geojson"
 
-    # Stack with a pixel_size of 60m
-    series.stack(RED, window=aoi_path, pixel_size=60)
+            # Create object
+            series = Series(paths=s2_paths, remove_tmp=not ON_DISK)
+            series.output = os.path.join(output, series.condensed_name)
 
-    # Just see if this doesn't fail
+            # Stack with a pixel_size of 60m
+            series.stack(RED, window=aoi_path, pixel_size=60)
+
+            # Just see if this doesn't fail

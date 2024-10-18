@@ -13,6 +13,7 @@ from ci.scripts_utils import (
     data_folder,
     get_ci_data_dir,
     get_copdem_30,
+    get_output,
     pair_folder,
     s3_env,
 )
@@ -21,7 +22,11 @@ from eosets.pair import Pair
 
 ci.reduce_verbosity()
 
-ON_DISK = True
+ON_DISK = False
+
+
+def get_ci_pair_data_dir():
+    return str(get_ci_data_dir() / "PAIR")
 
 
 @s3_env
@@ -29,7 +34,7 @@ def test_pair_non_ortho_with_window():
     """Test pair non-ortho native with a window"""
     # DO NOT REPROJECT BANDS --> WAY TOO SLOW
     with tempenv.TemporaryEnvironment(
-        {DEM_PATH: get_copdem_30(), CI_EOREADER_BAND_FOLDER: str(get_ci_data_dir())}
+        {DEM_PATH: get_copdem_30(), CI_EOREADER_BAND_FOLDER: get_ci_pair_data_dir()}
     ):
         aoi = data_folder() / "psh_pld_aoi.shp"
         pld_paths = {
@@ -38,10 +43,9 @@ def test_pair_non_ortho_with_window():
         }
 
         with tempfile.TemporaryDirectory() as output:
-            if ON_DISK:
-                output = r"/mnt/ds2_db3/CI/eosets/PAIR"
+            output = get_output(output, "PAIR", ON_DISK)
 
-            pld_pair = Pair(**pld_paths, window=aoi, remove_tmp=not ON_DISK)
+            pld_pair = Pair(**pld_paths, remove_tmp=not ON_DISK)
             pld_pair.output = os.path.join(output, pld_pair.condensed_name)
 
             ms_path = pld_pair.output / "rgbn_stack.tif"
@@ -70,61 +74,63 @@ def _test_pair_core(paths: dict) -> None:
         paths (dict): Pair paths
     """
 
-    aoi_path = data_folder() / "Fire_Spain.geojson"
+    with tempenv.TemporaryEnvironment(
+        {CI_EOREADER_BAND_FOLDER: get_ci_pair_data_dir()}
+    ):
+        aoi_path = data_folder() / "Fire_Spain.geojson"
 
-    with tempfile.TemporaryDirectory() as output:
-        if ON_DISK:
-            output = r"/mnt/ds2_db3/CI/eosets/PAIR"
+        with tempfile.TemporaryDirectory() as output:
+            output = get_output(output, "PAIR", ON_DISK)
 
-        # Create object
-        pair = Pair(**paths)
-        pair.output = os.path.join(output, pair.condensed_name)
+            # Create object
+            pair = Pair(**paths, remove_tmp=not ON_DISK)
+            pair.output = os.path.join(output, pair.condensed_name)
 
-        # Check extent
-        compare_geom("extent", pair, pair_folder(), ON_DISK)
+            # Check extent
+            compare_geom("extent", pair, pair_folder(), ON_DISK)
 
-        # Check footprint
-        compare_geom("footprint", pair, pair_folder(), ON_DISK)
+            # Check footprint
+            compare_geom("footprint", pair, pair_folder(), ON_DISK)
 
-        # Check some properties
-        assert pair.is_homogeneous
+            # Check some properties
+            assert pair.is_homogeneous
 
-        # TODO: check with input mosaic, check secondary-reference
+            # TODO: check with input mosaic, check secondary-reference
 
-        # Test to see if there is an error
-        pair.load(
-            diff_bands=RED,
-            window=aoi_path,
-            pixel_size=60,
-        )
+            # Test to see if there is an error
+            pair.load(
+                diff_bands=RED,
+                window=aoi_path,
+                pixel_size=60,
+            )
 
-        # Stack with a pixel_size of 60m
-        pair_out = pair.output / "red_stack.tif"
-        assert pair.has_bands(RED)
-        pair.stack(
-            reference_bands=RED,
-            secondary_bands=RED,
-            diff_bands=RED,
-            window=aoi_path,
-            pixel_size=60,
-            stack_path=pair_out,
-        )
+            # Stack with a pixel_size of 60m
+            pair_out = pair.output / "red_stack.tif"
+            assert pair.has_bands(RED)
+            pair.stack(
+                reference_bands=RED,
+                secondary_bands=RED,
+                diff_bands=RED,
+                window=aoi_path,
+                pixel_size=60,
+                stack_path=pair_out,
+            )
 
-        # Test it
-        if ON_DISK:
-            ci_path = pair_out
-        else:
-            ci_path = pair_folder() / pair.condensed_name / "red_stack.tif"
+            # Test it
+            if ON_DISK:
+                ci_path = pair_out
+            else:
+                ci_path = pair_folder() / pair.condensed_name / "red_stack.tif"
 
-        ci.assert_raster_almost_equal(pair_out, ci_path)
+            ci.assert_raster_almost_equal(pair_out, ci_path)
 
-        # Not implemented
-        with pytest.raises(NotImplementedError):
-            pair.read_mtd()
+            # Not implemented
+            with pytest.raises(NotImplementedError):
+                pair.read_mtd()
 
-        # Clean everything
-        pair.clear()
-        pair.clean_tmp()
+            # Clean everything
+            pair.clear()
+            pair.clean_tmp()
 
 
 @s3_env

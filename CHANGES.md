@@ -5,7 +5,7 @@
 - FIX: Fix band retrieving when the env variable `CI_EOREADER_BAND_FOLDER` is set, in case of multiple files of the same band from different satellite data are present in the directory
 - FIX: Don't force set `remove_tmp` to `True` for `eoreader.Product` in `Mosaic`.
 - FIX: Don't try to mosaic bands of mono-mosaics
-- CI: Add more tests
+- CI: Add more tests, speed up and refactor
 
 ## 0.2.3 (2024-10-16)
 

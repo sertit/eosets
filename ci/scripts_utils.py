@@ -2,6 +2,7 @@
 
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
 from eoreader.reader import Reader
@@ -142,3 +143,12 @@ def s3_env(*args, **kwargs):
 def get_copdem_30():
     dem_sub_dir_path = ["GLOBAL", "COPDEM_30m", "COPDEM_30m.vrt"]
     return str(get_db_dir().joinpath(*dem_sub_dir_path))
+
+
+def get_output(tmp, folder, debug=False):
+    if debug:
+        out_path = Path(__file__).resolve().parent / "ci_output"
+        out_path.mkdir(parents=True, exist_ok=True)
+        return out_path / folder
+    else:
+        return Path(tmp, folder)

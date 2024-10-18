@@ -12,7 +12,9 @@ from tempenv import tempenv
 from ci.scripts_utils import (
     compare_geom,
     data_folder,
+    get_ci_data_dir,
     get_copdem_30,
+    get_output,
     mosaic_folder,
     s3_env,
 )
@@ -24,13 +26,15 @@ ci.reduce_verbosity()
 ON_DISK = False
 
 
+def get_ci_mosaic_data_dir():
+    return str(get_ci_data_dir() / "MOSAIC")
+
+
 @s3_env
 def test_s2_mosaic():
     """Test mosaic object with Sentinel-2 products"""
     with tempenv.TemporaryEnvironment(
-        {
-            DEM_PATH: get_copdem_30(),
-        }
+        {DEM_PATH: get_copdem_30(), CI_EOREADER_BAND_FOLDER: get_ci_mosaic_data_dir()}
     ):
         # Get some Sentinel-2 paths
         s2_32umu = (
@@ -47,8 +51,7 @@ def test_s2_mosaic():
         )
 
         with tempfile.TemporaryDirectory() as output:
-            if ON_DISK:
-                output = r"/mnt/ds2_db3/CI/eosets/MOSAIC"
+            output = get_output(output, "MOSAIC", ON_DISK)
 
             # First try with incompatible products
             with pytest.raises(IncompatibleProducts):
@@ -57,7 +60,9 @@ def test_s2_mosaic():
                 )
 
             # Create object
-            mosaic = Mosaic([s2_32ulv, s2_32ulu], mosaic_method="VRT")
+            mosaic = Mosaic(
+                [s2_32ulv, s2_32ulu], mosaic_method="VRT", remove_tmp=not ON_DISK
+            )
             mosaic.output = os.path.join(output, mosaic.condensed_name)
 
             # Check extent
@@ -96,34 +101,47 @@ def test_s2_mosaic():
 def test_mono_mosaic():
     """Test mosaic object with Sentinel-2 products (only one product)"""
 
-    # Get some Sentinel-2 paths
-    s2_32umu = (
-        data_folder()
-        / "S2B_MSIL2A_20220330T102619_N0400_R108_T32UMU_20220330T141833.SAFE"
-    )
+    with tempenv.TemporaryEnvironment(
+        {CI_EOREADER_BAND_FOLDER: get_ci_mosaic_data_dir()}
+    ):
+        with tempfile.TemporaryDirectory() as output:
+            output = get_output(output, "MOSAIC", ON_DISK)
 
-    # Create object
-    mosaic = Mosaic([s2_32umu], mosaic_method="VRT")
-    mosaic.stack(
-        [NDVI],
-        pixel_size=600,
-    )
+            # Get some Sentinel-2 paths
+            s2_32umu = (
+                data_folder()
+                / "S2B_MSIL2A_20220330T102619_N0400_R108_T32UMU_20220330T141833.SAFE"
+            )
 
-    # Just see if this doesn't fail
+            # Create object
+            mosaic = Mosaic([s2_32umu], mosaic_method="VRT", remove_tmp=not ON_DISK)
+            mosaic.output = os.path.join(output, mosaic.condensed_name)
+            mosaic.stack(
+                [NDVI],
+                pixel_size=600,
+            )
+
+            # Just see if this doesn't fail
 
 
 def test_ci_eoreader_band_folder():
     """Test mosaic with CI_EOREADER_BAND_FOLDER set to an arbitrary diretcory."""
-    with tempenv.TemporaryEnvironment({CI_EOREADER_BAND_FOLDER: str(data_folder())}):
-        # Get some Sentinel-2 paths
-        s2_32umu = (
-            data_folder()
-            / "S2B_MSIL2A_20220330T102619_N0400_R108_T32UMU_20220330T141833.SAFE"
-        )
+    with tempenv.TemporaryEnvironment(
+        {CI_EOREADER_BAND_FOLDER: get_ci_mosaic_data_dir()}
+    ):
+        with tempfile.TemporaryDirectory() as output:
+            output = get_output(output, "MOSAIC", ON_DISK)
 
-        # Create object
-        mosaic = Mosaic([s2_32umu], mosaic_method="VRT")
-        mosaic.stack(
-            [NBR],
-            pixel_size=600,
-        )
+            # Get some Sentinel-2 paths
+            s2_32umu = (
+                data_folder()
+                / "S2B_MSIL2A_20220330T102619_N0400_R108_T32UMU_20220330T141833.SAFE"
+            )
+
+            # Create object
+            mosaic = Mosaic([s2_32umu], mosaic_method="VRT", remove_tmp=not ON_DISK)
+            mosaic.output = os.path.join(output, mosaic.condensed_name)
+            mosaic.stack(
+                [NBR],
+                pixel_size=600,
+            )
