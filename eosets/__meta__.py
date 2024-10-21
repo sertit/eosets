@@ -17,7 +17,7 @@
 """
 **EOSets** library
 """
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 __title__ = "eosets"
 __description__ = "This library aims to simplify any process working with different sets of EO data handled by EOReader."
 __author__ = "ICube-SERTIT"
