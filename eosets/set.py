@@ -311,14 +311,14 @@ class Set:
         """Check if the set has only SAR products."""
         return (
             self.same_constellation
-            and self.get_attr("constellation", **kwargs) == SensorType.SAR
+            and self.get_attr("sensor_type", **kwargs) == SensorType.SAR
         )
 
     def _has_only_optical(self, **kwargs):
         """Check if the set has only Optical products."""
         return (
             self.same_constellation
-            and self.get_attr("constellation", **kwargs) == SensorType.OPTICAL
+            and self.get_attr("sensor_type", **kwargs) == SensorType.OPTICAL
         )
 
     def post_init(self, **kwargs):

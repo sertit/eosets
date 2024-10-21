@@ -2,6 +2,7 @@
 
 ## 0.2.5 (2024-mm-dd)
 
+- FIX: Fix retrieval of `is_optical` and `is_sar` Mosaic members
 - FIX: Fix changes looked for to run CI
 
 ## 0.2.4 (2024-10-18)

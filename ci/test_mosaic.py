@@ -65,6 +65,11 @@ def test_s2_mosaic():
             )
             mosaic.output = os.path.join(output, mosaic.condensed_name)
 
+            # Some checks
+            # TODO: add more
+            ci.assert_val(mosaic.is_optical, True, "Is Optical?")
+            ci.assert_val(mosaic.is_sar, False, "Is SAR?")
+
             # Check extent
             compare_geom("extent", mosaic, mosaic_folder(), ON_DISK)
 
@@ -121,6 +126,11 @@ def test_mono_mosaic():
                 pixel_size=600,
             )
 
+            # Some checks
+            # TODO: add more
+            ci.assert_val(mosaic.is_optical, True, "Is Optical?")
+            ci.assert_val(mosaic.is_sar, False, "Is SAR?")
+
             # Just see if this doesn't fail
 
 
@@ -145,3 +155,8 @@ def test_ci_eoreader_band_folder():
                 [NBR],
                 pixel_size=600,
             )
+
+            # Some checks
+            # TODO: add more
+            ci.assert_val(mosaic.is_optical, True, "Is Optical?")
+            ci.assert_val(mosaic.is_sar, False, "Is SAR?")
