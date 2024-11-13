@@ -30,7 +30,7 @@ from eoreader.bands import BandNames, is_spectral_band, to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
-from sertit import AnyPath, files, path, rasters
+from sertit import AnyPath, files, path, rasters, types
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType
 
@@ -137,10 +137,10 @@ class Mosaic(Set):
         Raises:
             IncompatibleProducts: Incompatible products if not contiguous or not the same date
         """
-        try:
+        if types.is_iterable(paths):
             ref_path = paths[0]
             assert path.is_path(ref_path), "You should give paths to build your Mosaic!"
-        except (IndexError, TypeError):
+        else:
             assert path.is_path(
                 paths
             ), "You should give at least one path for your Mosaic!"

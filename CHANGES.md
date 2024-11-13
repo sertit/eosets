@@ -1,5 +1,9 @@
 # Release History
 
+## 0.2.6 (2024-mm-dd)
+
+- FIX: Don't fail in case of a string is given as Mosaic path. 
+
 ## 0.2.5 (2024-10-21)
 
 - FIX: Fix retrieval of `is_optical` and `is_sar` Mosaic members
