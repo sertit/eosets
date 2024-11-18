@@ -27,7 +27,7 @@ try:
     from eoreader.bands import BandsType
 
     BandsType = BandsType
-except ModuleNotFoundError:
+except ImportError:
     from typing import Union
 
     from eoreader.bands import BandType
