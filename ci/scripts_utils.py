@@ -7,9 +7,9 @@ from typing import Any
 
 from eoreader.reader import Reader
 from sertit import AnyPath, ci, unistra
+from sertit.types import AnyPathType
 
 from eosets import EOSETS_NAME
-from eosets.utils import AnyPathType
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 READER = Reader()
