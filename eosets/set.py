@@ -25,15 +25,16 @@ from typing import Any, Tuple, Union
 
 import geopandas as gpd
 import xarray as xr
-from eoreader.bands import BandNames, to_str
+from eoreader.bands import BandType, to_str
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER
 from eoreader.products import Product, SensorType
 from sertit import AnyPath, files, path
 from sertit.misc import ListEnum
+from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
 
 from eosets import EOSETS_NAME
 from eosets.env_vars import CI_EOSETS_BAND_FOLDER
-from eosets.utils import AnyPathType
+from eosets.utils import BandsType
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 
@@ -52,12 +53,15 @@ class GeometryCheck(ListEnum):
     """ No geometric check will be applied."""
 
 
+GeometryCheckType = Union[GeometryCheck, str]
+
+
 class Set:
     """Abstract class of set. Basically implementing output management"""
 
     def __init__(
         self,
-        output_path: Union[str, AnyPathType] = None,
+        output_path: AnyPathStrType = None,
         id: str = None,
         remove_tmp: bool = True,
         **kwargs,
@@ -182,12 +186,12 @@ class Set:
         os.makedirs(self._tmp_process, exist_ok=True)
 
     @output.setter
-    def output(self, value: Union[str, AnyPathType]) -> None:
+    def output(self, value: AnyPathStrType) -> None:
         """
         Output directory of the set
 
         Args:
-            value (Union[str, AnyPathType]): Output path of the set
+            value (AnyPathStrType): Output path of the set
         """
         # Set the new output
         self._output = AnyPath(value)
@@ -375,7 +379,7 @@ class Set:
         """
         raise NotImplementedError
 
-    def has_band(self, band: Union[BandNames, str]) -> bool:
+    def has_band(self, band: BandType) -> bool:
         """
         Does this moasic have products with the specified band ?
 
@@ -387,14 +391,14 @@ class Set:
         - cloud band
 
         Args:
-            band (Union[BandNames, str]): EOReader band (optical, SAR, clouds, DEM)
+            band (BandType): EOReader band (optical, SAR, clouds, DEM)
 
         Returns:
             bool: True if the products has the specified band
         """
         return all(prod.has_band(band) for prod in self.get_prods())
 
-    def has_bands(self, bands: Union[list, BandNames, str]) -> bool:
+    def has_bands(self, bands: BandsType) -> bool:
         """
         Does this moasic have products with the specified bands ?
 
@@ -408,7 +412,7 @@ class Set:
         See :code:`has_band` for a code example.
 
         Args:
-            bands (Union[list, BandNames, str]): EOReader bands (optical, SAR, clouds, DEM)
+            bands (BandsType): EOReader bands (optical, SAR, clouds, DEM)
 
         Returns:
             bool: True if the products has the specified band
@@ -417,15 +421,15 @@ class Set:
         return all(prod.has_bands(bands) for prod in self.get_prods())
 
     def _update_attrs(
-        self, xarr: Union[xr.DataArray, xr.Dataset], bands: list, **kwargs
-    ) -> Union[xr.DataArray, xr.Dataset]:
+        self, xarr: AnyXrDataStructure, bands: list, **kwargs
+    ) -> AnyXrDataStructure:
         """
         Update attributes of the given array
         Args:
-            xarr (Union[xr.DataArray, xr.Dataset]): Array whose attributes need an update
+            xarr (AnyXrDataStructure): Array whose attributes need an update
             bands (list): Bands
         Returns:
-            Union[xr.DataArray, xr.Dataset]: Updated dataarray/dataset
+            AnyXrDataStructure: Updated DataArray/Dataset
         """
         # Clean attributes, we don't want to pollute our attributes by default ones (not deterministic)
         # Are we sure of that ?
@@ -467,7 +471,7 @@ class Set:
     def _update_xds_attrs(
         self,
         xds: xr.Dataset,
-        bands: Union[list, BandNames, str],
+        bands: BandsType,
         **kwargs,
     ) -> xr.Dataset:
         """ """

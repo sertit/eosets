@@ -26,7 +26,7 @@ from typing import Union
 import geopandas as gpd
 import xarray as xr
 from eoreader import cache, utils
-from eoreader.bands import BandNames, is_spectral_band, to_band, to_str
+from eoreader.bands import is_spectral_band, to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
@@ -36,8 +36,8 @@ from sertit.types import AnyPathStrType
 
 from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
-from eosets.set import GeometryCheck, Set
-from eosets.utils import AnyPathType, stack
+from eosets.set import GeometryCheck, GeometryCheckType, Set
+from eosets.utils import BandsType, stack
 
 READER = Reader()
 
@@ -57,11 +57,11 @@ class Mosaic(Set):
 
     def __init__(
         self,
-        paths: Union[list, str, AnyPathType],
-        output_path: Union[str, AnyPathType] = None,
+        paths: Union[list, AnyPathStrType],
+        output_path: AnyPathStrType = None,
         id: str = None,
         remove_tmp: bool = True,
-        contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
+        contiguity_check: GeometryCheckType = GeometryCheck.EXTENT,
         mosaic_method: Union[MosaicMethod, str] = MosaicMethod.VRT,
         **kwargs,
     ):
@@ -326,7 +326,7 @@ class Mosaic(Set):
 
     def load(
         self,
-        bands: Union[list, BandNames, str],
+        bands: BandsType,
         pixel_size: float = None,
         **kwargs,
     ) -> xr.Dataset:
@@ -334,7 +334,7 @@ class Mosaic(Set):
         Load the bands and compute the wanted spectral indices.
 
         Args:
-            bands (Union[list, BandNames, str]): Wanted bands
+            bands (BandsType): Wanted bands
             pixel_size (float): Pixel size of the returned Dataset. If not specified, use the mosaic's pixel size.
             **kwargs: Other arguments used to load bands
 
@@ -464,7 +464,7 @@ class Mosaic(Set):
         self,
         bands: list,
         pixel_size: float = None,
-        stack_path: Union[str, AnyPathType] = None,
+        stack_path: AnyPathStrType = None,
         save_as_int: bool = False,
         **kwargs,
     ) -> xr.DataArray:
@@ -474,7 +474,7 @@ class Mosaic(Set):
         Args:
             bands (list): Bands and index combination
             pixel_size (float): Stack pixel size. . If not specified, use the product pixel size.
-            stack_path (Union[str, AnyPathType]): Stack path
+            stack_path (AnyPathStrType): Stack path
             save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
             **kwargs: Other arguments passed to :code:`load` or :code:`rioxarray.to_raster()` (such as :code:`compress`)
 
@@ -537,3 +537,7 @@ class Mosaic(Set):
         xarr.attrs["acquisition_date"] = self.date
 
         return xarr
+
+
+AnyMosaicType = Union[list, AnyPathStrType, Product, Mosaic]
+""" Any Mosaic type (either a list or paths or products, a path, a product or a mosaic itself) """

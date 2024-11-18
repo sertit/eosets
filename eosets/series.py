@@ -25,7 +25,7 @@ import geopandas as gpd
 import numpy as np
 import xarray as xr
 from eoreader import cache
-from eoreader.bands import BandNames, to_band, to_str
+from eoreader.bands import to_band, to_str
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
@@ -36,8 +36,8 @@ from sertit.types import AnyPathStrType
 from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
-from eosets.set import GeometryCheck, Set
-from eosets.utils import AnyPathType, read, stack, write
+from eosets.set import GeometryCheck, GeometryCheckType, Set
+from eosets.utils import BandsType, read, stack, write
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 READER = Reader()
@@ -80,10 +80,10 @@ class Series(Set):
         self,
         paths: list,
         id: str = None,
-        output_path: Union[AnyPathStrType] = None,
+        output_path: AnyPathStrType = None,
         remove_tmp: bool = True,
-        overlap_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
-        contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
+        overlap_check: GeometryCheckType = GeometryCheck.EXTENT,
+        contiguity_check: GeometryCheckType = GeometryCheck.EXTENT,
         alignement: Union[Alignment, str] = Alignment.FIRST,
         coregister: bool = False,
         reference_mosaic: Union[Mosaic, int, str] = None,
@@ -307,7 +307,7 @@ class Series(Set):
 
     def load(
         self,
-        bands: Union[list, BandNames, str] = None,
+        bands: BandsType = None,
         pixel_size: float = None,
         resampling: Resampling = Resampling.bilinear,
         **kwargs,
@@ -317,7 +317,7 @@ class Series(Set):
         Load the bands and compute the wanted spectral indices.
 
         Args:
-            bands (Union[list, BandNames, str]): Wanted bands
+            bands (BandsType): Wanted bands
             pixel_size (float): Pixel size of the returned Dataset. If not specified, use the mosaic's pixel size.
             resampling (Resampling): Resampling method
             **kwargs: Other arguments used to load bands
@@ -392,7 +392,7 @@ class Series(Set):
         self,
         bands: list,
         pixel_size: float = None,
-        stack_path: Union[str, AnyPathType] = None,
+        stack_path: AnyPathStrType = None,
         save_as_int: bool = False,
         **kwargs,
     ) -> xr.DataArray:
@@ -402,7 +402,7 @@ class Series(Set):
         Args:
             bands (list): Bands and index combination
             pixel_size (float): Stack pixel size. If not specified, use the product pixel size.
-            stack_path (Union[str, AnyPathType]): Stack path
+            stack_path (AnyPathStrType): Stack path
             save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
             **kwargs: Other arguments passed to :code:`load` or :code:`rioxarray.to_raster()` (such as :code:`compress`)
 

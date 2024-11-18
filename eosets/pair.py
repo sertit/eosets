@@ -18,12 +18,11 @@
 import logging
 import os
 from enum import unique
-from typing import Union
 
 import geopandas as gpd
 import xarray as xr
 from eoreader import cache
-from eoreader.bands import BandNames, to_band, to_str
+from eoreader.bands import to_band, to_str
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
 from sertit import AnyPath, rasters
@@ -32,9 +31,9 @@ from sertit.types import AnyPathStrType
 
 from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
-from eosets.mosaic import Mosaic
-from eosets.set import GeometryCheck, Set
-from eosets.utils import AnyPathType, read, stack, write
+from eosets.mosaic import AnyMosaicType, Mosaic
+from eosets.set import GeometryCheck, GeometryCheckType, Set
+from eosets.utils import BandsType, read, stack, write
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 
@@ -52,13 +51,13 @@ class Pair(Set):
 
     def __init__(
         self,
-        reference_paths: Union[list, AnyPathStrType, Mosaic],
-        secondary_paths: Union[list, AnyPathStrType, Mosaic] = None,
+        reference_paths: AnyMosaicType,
+        secondary_paths: AnyMosaicType = None,
         id: str = None,
-        output_path: Union[AnyPathStrType] = None,
+        output_path: AnyPathStrType = None,
         remove_tmp: bool = True,
-        overlap_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
-        contiguity_check: Union[GeometryCheck, str] = GeometryCheck.EXTENT,
+        overlap_check: GeometryCheckType = GeometryCheck.EXTENT,
+        contiguity_check: GeometryCheckType = GeometryCheck.EXTENT,
         **kwargs,
     ):
         # Manage reference mosaic
@@ -155,8 +154,8 @@ class Pair(Set):
 
     def _manage_mosaics(
         self,
-        reference_paths: Union[list, AnyPathStrType, Mosaic],
-        secondary_paths: Union[list, AnyPathStrType, Mosaic] = None,
+        reference_paths: AnyMosaicType,
+        secondary_paths: AnyMosaicType = None,
         contiguity_check: GeometryCheck = GeometryCheck.EXTENT,
         overlap_check: GeometryCheck = GeometryCheck.EXTENT,
     ) -> None:
@@ -168,8 +167,8 @@ class Pair(Set):
         If not, throws a IncompatibleProducts error.
 
         Args:
-            reference_paths (Union[list, AnyPathStrType, Mosaic]): Paths corresponding to the reference mosaic
-            secondary_paths (Union[list, AnyPathStrType, Mosaic]): Paths corresponding to the secondary mosaic
+            reference_paths (AnyMosaicType): Paths corresponding to the reference mosaic
+            secondary_paths (AnyMosaicType): Paths corresponding to the secondary mosaic
             contiguity_check (GeometryCheck): Check regarding the contiguity of the products of the mosaics
             overlap_check (GeometryCheck): Check regarding the overlapping of the two mosaics
 
@@ -267,9 +266,9 @@ class Pair(Set):
 
     def load(
         self,
-        reference_bands: Union[list, BandNames, str] = None,
-        secondary_bands: Union[list, BandNames, str] = None,
-        diff_bands: Union[list, BandNames, str] = None,
+        reference_bands: BandsType = None,
+        secondary_bands: BandsType = None,
+        diff_bands: BandsType = None,
         pixel_size: float = None,
         diff_method: DiffMethod = DiffMethod.REFERENCE_SECONDARY,
         resampling: Resampling = Resampling.bilinear,
@@ -279,9 +278,9 @@ class Pair(Set):
         Load the bands and compute the wanted spectral indices for reference, secondary and diff.
 
         Args:
-            reference_bands (Union[list, BandNames, str]): Wanted reference bands
-            secondary_bands (Union[list, BandNames, str]): Wanted secondary bands
-            diff_bands (Union[list, BandNames, str]): Wanted diff bands
+            reference_bands (BandsType): Wanted reference bands
+            secondary_bands (BandsType): Wanted secondary bands
+            diff_bands (BandsType): Wanted diff bands
             pixel_size (float): Pixel size of the returned Datasets. If not specified, use the pair's pixel size.
             diff_method (DiffMethod): Difference method for the computation of diff_bands
             resampling (Resampling): Resampling method
@@ -431,12 +430,12 @@ class Pair(Set):
 
     def stack(
         self,
-        reference_bands: Union[list, BandNames, str] = None,
-        secondary_bands: Union[list, BandNames, str] = None,
-        diff_bands: Union[list, BandNames, str] = None,
+        reference_bands: BandsType = None,
+        secondary_bands: BandsType = None,
+        diff_bands: BandsType = None,
         pixel_size: float = None,
         diff_method: DiffMethod = DiffMethod.REFERENCE_SECONDARY,
-        stack_path: Union[str, AnyPathType] = None,
+        stack_path: AnyPathStrType = None,
         save_as_int: bool = False,
         **kwargs,
     ) -> xr.DataArray:
@@ -444,11 +443,11 @@ class Pair(Set):
         Stack bands and index of a pair.
 
         Args:
-            reference_bands (Union[list, BandNames, str]): Bands and index combination for the reference mosaic
-            secondary_bands (Union[list, BandNames, str]): Bands and index combination for the secondary mosaic
-            diff_bands (Union[list, BandNames, str]): Bands and index combination for the difference between reference and secondary mosaic
+            reference_bands (BandsType): Bands and index combination for the reference mosaic
+            secondary_bands (BandsType): Bands and index combination for the secondary mosaic
+            diff_bands (BandsType): Bands and index combination for the difference between reference and secondary mosaic
             pixel_size (float): Stack pixel size. If not specified, use the pair's pixel size.
-            stack_path (Union[str, AnyPathType]): Stack path
+            stack_path (AnyPathStrType): Stack path
             save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
             **kwargs: Other arguments passed to :code:`load` or :code:`rioxarray.to_raster()` (such as :code:`compress`)
 

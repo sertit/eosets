@@ -3,6 +3,7 @@
 ## 0.2.6 (2024-mm-dd)
 
 - FIX: Don't fail in case of a string is given as Mosaic path. 
+- FIX: Update and refactor types 
 
 ## 0.2.5 (2024-10-21)
 

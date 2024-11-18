@@ -17,10 +17,19 @@
 """ Utils file """
 
 from eoreader import utils
-from sertit import types
-
-AnyPathType = types.AnyPathType
 
 read = utils.read
 write = utils.write
 stack = utils.stack
+
+# Bands Type
+try:
+    from eoreader.bands import BandsType
+
+    BandsType = BandsType
+except ModuleNotFoundError:
+    from typing import Union
+
+    from eoreader.bands import BandType
+
+    BandsType = Union[list, BandType]
