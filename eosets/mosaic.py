@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2023, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of eosets project
 #     https://github.com/sertit/eosets
@@ -14,7 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Class implementing the mosaic object """
+"""Class implementing the mosaic object"""
+
+import contextlib
 import logging
 import os
 import shutil
@@ -114,11 +115,9 @@ class Mosaic(Set):
         Manage the output specifically for this child class
         """
         for prod in self.get_prods():
-            try:
+            # Never mind for non-existing files: they have already been copied :)
+            with contextlib.suppress(FileNotFoundError):
                 prod.output = self._get_tmp_folder(writable=True)
-            except FileNotFoundError:
-                # Never mind for non-existing files: they have already been copied :)
-                pass
 
     def _manage_prods(
         self,
@@ -316,13 +315,8 @@ class Mosaic(Set):
     def _get_band_suffix(self):
         """Get the band suffix"""
         # For multiple products, a mosaic is needed
-        if self.nof_prods > 1:
-            suffix = f"{self.mosaic_method.name.lower()}"
-
         # For one product, just copy the raster band so set it to tif
-        else:
-            suffix = "tif"
-        return suffix
+        return f"{self.mosaic_method.name.lower()}" if self.nof_prods > 1 else "tif"
 
     def load(
         self,

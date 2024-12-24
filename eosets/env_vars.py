@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2023, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of eosets project
 #     https://github.com/sertit/eosets
@@ -14,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Environment variables that can change the processes """
+"""Environment variables that can change the processes"""
+
 CI_EOSETS_BAND_FOLDER = "CI_EOSETS_BAND_FOLDER"
 """
 Environment variable used in CI to override the existing band path

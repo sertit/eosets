@@ -1,6 +1,5 @@
 # """ Testing pair """
 import os
-import tempfile
 
 import pytest
 from eoreader.bands import BLUE, GREEN, NIR, PAN, RED
@@ -30,7 +29,7 @@ def get_ci_pair_data_dir():
 
 
 @s3_env
-def test_pair_non_ortho_with_window():
+def test_pair_non_ortho_with_window(tmp_path):
     """Test pair non-ortho native with a window"""
     # DO NOT REPROJECT BANDS --> WAY TOO SLOW
     with tempenv.TemporaryEnvironment(
@@ -42,31 +41,30 @@ def test_pair_non_ortho_with_window():
             "secondary_paths": [data_folder() / "IMG_PHR1A_MS_004"],
         }
 
-        with tempfile.TemporaryDirectory() as output:
-            output = get_output(output, "PAIR", ON_DISK)
+        output = get_output(tmp_path, "PAIR", ON_DISK)
 
-            pld_pair = Pair(**pld_paths, remove_tmp=not ON_DISK)
-            pld_pair.output = os.path.join(output, pld_pair.condensed_name)
+        pld_pair = Pair(**pld_paths, remove_tmp=not ON_DISK)
+        pld_pair.output = os.path.join(output, pld_pair.condensed_name)
 
-            ms_path = pld_pair.output / "rgbn_stack.tif"
-            pan_path = pld_pair.output / "pan_stack.tif"
+        ms_path = pld_pair.output / "rgbn_stack.tif"
+        pan_path = pld_pair.output / "pan_stack.tif"
 
-            # RGBN
-            rgbn_stck = pld_pair.secondary_mosaic.stack(
-                [RED, GREEN, BLUE, NIR], stack_path=ms_path, window=aoi
-            )
-            ci.assert_val(rgbn_stck.rio.resolution()[0], 2.0, "RGBN resolution")
-            ci.assert_val(rgbn_stck.rio.count, 4, "RGBN number of bands")
+        # RGBN
+        rgbn_stck = pld_pair.secondary_mosaic.stack(
+            [RED, GREEN, BLUE, NIR], stack_path=ms_path, window=aoi
+        )
+        ci.assert_val(rgbn_stck.rio.resolution()[0], 2.0, "RGBN resolution")
+        ci.assert_val(rgbn_stck.rio.count, 4, "RGBN number of bands")
 
-            # PAN
-            pan_stck = pld_pair.reference_mosaic.stack(
-                [PAN], stack_path=pan_path, window=aoi
-            )
-            ci.assert_val(pan_stck.rio.resolution()[0], 0.5, "PAN resolution")
-            ci.assert_val(pan_stck.rio.count, 1, "PAN number of bands")
+        # PAN
+        pan_stck = pld_pair.reference_mosaic.stack(
+            [PAN], stack_path=pan_path, window=aoi
+        )
+        ci.assert_val(pan_stck.rio.resolution()[0], 0.5, "PAN resolution")
+        ci.assert_val(pan_stck.rio.count, 1, "PAN number of bands")
 
 
-def _test_pair_core(paths: dict) -> None:
+def _test_pair_core(paths: dict, tmp_path) -> None:
     """
     Test pair core
 
@@ -79,62 +77,61 @@ def _test_pair_core(paths: dict) -> None:
     ):
         aoi_path = data_folder() / "Fire_Spain.geojson"
 
-        with tempfile.TemporaryDirectory() as output:
-            output = get_output(output, "PAIR", ON_DISK)
+        output = get_output(tmp_path, "PAIR", ON_DISK)
 
-            # Create object
-            pair = Pair(**paths, remove_tmp=not ON_DISK)
-            pair.output = os.path.join(output, pair.condensed_name)
+        # Create object
+        pair = Pair(**paths, remove_tmp=not ON_DISK)
+        pair.output = os.path.join(output, pair.condensed_name)
 
-            # Check extent
-            compare_geom("extent", pair, pair_folder(), ON_DISK)
+        # Check extent
+        compare_geom("extent", pair, pair_folder(), ON_DISK)
 
-            # Check footprint
-            compare_geom("footprint", pair, pair_folder(), ON_DISK)
+        # Check footprint
+        compare_geom("footprint", pair, pair_folder(), ON_DISK)
 
-            # Check some properties
-            assert pair.is_homogeneous
+        # Check some properties
+        assert pair.is_homogeneous
 
-            # TODO: check with input mosaic, check secondary-reference
+        # TODO: check with input mosaic, check secondary-reference
 
-            # Test to see if there is an error
-            pair.load(
-                diff_bands=RED,
-                window=aoi_path,
-                pixel_size=60,
-            )
+        # Test to see if there is an error
+        pair.load(
+            diff_bands=RED,
+            window=aoi_path,
+            pixel_size=60,
+        )
 
-            # Stack with a pixel_size of 60m
-            pair_out = pair.output / "red_stack.tif"
-            assert pair.has_bands(RED)
-            pair.stack(
-                reference_bands=RED,
-                secondary_bands=RED,
-                diff_bands=RED,
-                window=aoi_path,
-                pixel_size=60,
-                stack_path=pair_out,
-            )
+        # Stack with a pixel_size of 60m
+        pair_out = pair.output / "red_stack.tif"
+        assert pair.has_bands(RED)
+        pair.stack(
+            reference_bands=RED,
+            secondary_bands=RED,
+            diff_bands=RED,
+            window=aoi_path,
+            pixel_size=60,
+            stack_path=pair_out,
+        )
 
-            # Test it
-            if ON_DISK:
-                ci_path = pair_out
-            else:
-                ci_path = pair_folder() / pair.condensed_name / "red_stack.tif"
+        # Test it
+        if ON_DISK:
+            ci_path = pair_out
+        else:
+            ci_path = pair_folder() / pair.condensed_name / "red_stack.tif"
 
-            ci.assert_raster_almost_equal(pair_out, ci_path)
+        ci.assert_raster_almost_equal(pair_out, ci_path)
 
-            # Not implemented
-            with pytest.raises(NotImplementedError):
-                pair.read_mtd()
+        # Not implemented
+        with pytest.raises(NotImplementedError):
+            pair.read_mtd()
 
-            # Clean everything
-            pair.clear()
-            pair.clean_tmp()
+        # Clean everything
+        pair.clear()
+        pair.clean_tmp()
 
 
 @s3_env
-def test_s2_pair():
+def test_s2_pair(tmp_path):
     """Test pair object with Sentinel-2 products"""
     s2_paths = {
         "reference_paths": [
@@ -146,11 +143,11 @@ def test_s2_pair():
             / "S2B_MSIL1C_20200908T110619_N0209_R137_T29TQE_20200908T132324.zip"
         ],
     }
-    _test_pair_core(s2_paths)
+    _test_pair_core(s2_paths, tmp_path)
 
 
 @s3_env
-def test_s3_pair():
+def test_s3_pair(tmp_path):
     """Test pair object with Sentinel-3 products"""
     s3_paths = {
         "reference_paths": [
@@ -162,11 +159,11 @@ def test_s3_pair():
             / "S3B_SL_1_RBT____20200909T104016_20200909T104316_20200910T161910_0179_043_165_2340_LN2_O_NT_004.SEN3"
         ],
     }
-    _test_pair_core(s3_paths)
+    _test_pair_core(s3_paths, tmp_path)
 
 
 @s3_env
-def test_l8_pair():
+def test_l8_pair(tmp_path):
     """Test pair object with Landsat-8 products"""
     l8_paths = {
         "reference_paths": [
@@ -176,18 +173,18 @@ def test_l8_pair():
             data_folder() / "LC08_L1TP_202032_20200929_20201006_02_T1.tar"
         ],
     }
-    _test_pair_core(l8_paths)
+    _test_pair_core(l8_paths, tmp_path)
 
 
 @s3_env
-def test_pair_no_secondary():
+def test_pair_no_secondary(tmp_path):
     """Test pair object with Landsat-8 products"""
     l8_paths = {
         "reference_paths": [
             data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1.tar"
         ],
     }
-    _test_pair_core(l8_paths)
+    _test_pair_core(l8_paths, tmp_path)
 
 
 @s3_env

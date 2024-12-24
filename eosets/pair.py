@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2023, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of eosets project
 #     https://github.com/sertit/eosets
@@ -14,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Class implementing a two-products pair """
+"""Class implementing a two-products pair"""
+
 import logging
 import os
 from enum import unique
@@ -382,7 +382,7 @@ class Pair(Set):
 
             # Drop not wanted bands from secondary dataset
             sec_ds = sec_ds.drop_vars(
-                [band for band in sec_ds.keys() if band not in secondary_bands]
+                [band for band in sec_ds if band not in secondary_bands]
             )
 
             # Create diff dataset
@@ -405,7 +405,7 @@ class Pair(Set):
         # Update reference dataset
         # Drop not wanted bands from reference dataset
         ref_ds = ref_ds.drop_vars(
-            [band for band in ref_ds.keys() if band not in reference_bands]
+            [band for band in ref_ds if band not in reference_bands]
         )
 
         ref_ds = self._update_xds_attrs(ref_ds, reference_bands)

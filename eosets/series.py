@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2023, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of eosets project
 #     https://github.com/sertit/eosets
@@ -14,7 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Class implementing the series object """
+"""Class implementing the series object"""
+
 import logging
 import os
 from collections import defaultdict
@@ -242,9 +242,10 @@ class Series(Set):
             raise NotImplementedError
         elif self.alignment == Alignment.EXTERNAL:
             return self._reference_mosaic
-        elif self.alignment == Alignment.CUSTOM:
-            if isinstance(self._reference_mosaic, int):
-                return self.mosaics[self._reference_mosaic]
+        elif self.alignment == Alignment.CUSTOM and isinstance(
+            self._reference_mosaic, int
+        ):
+            return self.mosaics[self._reference_mosaic]
 
     @reference_mosaic.setter
     def reference_mosaic(self, mosaic: Union[Mosaic, int] = None):
@@ -298,10 +299,7 @@ class Series(Set):
         extent = None
         for mos in self.mosaics:
             geom: gpd.GeoDataFrame = mos.footprint().to_crs(self.reference_mosaic.crs)
-            if extent is None:
-                extent = geom
-            else:
-                extent = extent.overlay(geom, "intersection")
+            extent = geom if extent is None else extent.overlay(geom, "intersection")
 
         return extent
 
@@ -337,7 +335,7 @@ class Series(Set):
 
         # Load mosaic bands
         arr_dict = defaultdict(list)
-        for mos_id, mos in enumerate(self.mosaics):
+        for mos in self.mosaics:
             # Get mosaic datetime
             dt = mos.datetime
 
@@ -427,7 +425,7 @@ class Series(Set):
         # Rename bands and remove time variable
         new_bands = []
         for band in bands:
-            for idx, dt in enumerate(band_ds.time.values):
+            for dt in band_ds.time.values:
                 new_bands.append(
                     f"{np.datetime_as_string(dt, unit='s')}_{to_str(band)[0]}"
                 )

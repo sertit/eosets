@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2023, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of eosets project
 #     https://github.com/sertit/eosets
@@ -14,14 +13,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Super class of all sets implemented in EOSets"""
+"""Super class of all sets implemented in EOSets"""
+
+import contextlib
 import logging
 import os
 import shutil
 import tempfile
 from abc import abstractmethod
 from enum import unique
-from typing import Any, Tuple, Union
+from typing import Any, Union
 
 import geopandas as gpd
 import xarray as xr
@@ -207,11 +208,9 @@ class Set:
 
         # Move all files from old process folder into the new one
         for file in path.listdir_abspath(old_tmp_process):
-            try:
+            # Don't overwrite file
+            with contextlib.suppress(shutil.Error):
                 shutil.move(str(file), self._tmp_process)
-            except shutil.Error:
-                # Don't overwrite file
-                pass
 
         # Remove old output if existing into the new output
         if self._tmp_output:
@@ -240,7 +239,7 @@ class Set:
 
         return tmp_folder
 
-    def _get_out_path(self, filename: str) -> Tuple[AnyPathType, bool]:
+    def _get_out_path(self, filename: str) -> tuple[AnyPathType, bool]:
         """
         Returns the output path of a file to be written, depending on if it already exists or not (manages CI folders)
 
@@ -442,10 +441,8 @@ class Set:
         xr_name = "_".join(long_name)
         attr_name = " ".join(long_name)
 
-        try:
+        with contextlib.suppress(ValueError):
             xarr = xarr.rename(xr_name)
-        except ValueError:
-            pass
 
         xarr.attrs["long_name"] = attr_name
         xarr.attrs["condensed_name"] = self.condensed_name

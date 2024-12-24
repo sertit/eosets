@@ -1,4 +1,4 @@
-""" Utils module for scripts """
+"""Utils module for scripts"""
 
 import logging
 import os
@@ -41,11 +41,11 @@ def get_ci_db_dir() -> AnyPathType:
         try:
             # CI
             return AnyPath(unistra.get_db3_path(), "CI", "eosets")
-        except NotADirectoryError:
+        except NotADirectoryError as exc:
             # Windows
             path = AnyPath(r"//ds2/database03/CI/eosets")
             if not path.is_dir():
-                raise NotADirectoryError("Impossible to find get_ci_db_dir")
+                raise NotADirectoryError("Impossible to find get_ci_db_dir") from exc
 
             return path
 
@@ -137,7 +137,7 @@ def compare_geom(geom_type: str, obj: Any, obj_folder: AnyPathType, on_disk: boo
 
 
 def s3_env(*args, **kwargs):
-    return unistra.s3_env(use_s3_env_var=CI_EOSETS_S3, *args, **kwargs)
+    return unistra.s3_env(*args, use_s3_env_var=CI_EOSETS_S3, **kwargs)
 
 
 def get_copdem_30():
