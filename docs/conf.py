@@ -63,9 +63,9 @@ templates_path = ["_templates"]
 master_doc = "index"
 
 # General information about the project.
-project = eosets.__title__
-copyright = eosets.__copyright__[10:]
-author = eosets.__author__
+project = "eosets"
+copyright = "Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/"
+author = "ICube-SERTIT"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -109,7 +109,7 @@ html_theme = "sphinx_book_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "repository_url": eosets.__url__,
+    "repository_url": "https://github.com/sertit/eosets",
     "repository_branch": "main",
     "path_to_docs": "docs",
     "repository_provider": "custom"
