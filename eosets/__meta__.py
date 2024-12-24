@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2023, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of eosets project
 #     https://github.com/sertit/eosets
@@ -17,12 +16,5 @@
 """
 **EOSets** library
 """
+
 __version__ = "0.2.5"
-__title__ = "eosets"
-__description__ = "This library aims to simplify any process working with different sets of EO data handled by EOReader."
-__author__ = "ICube-SERTIT"
-__author_email__ = "dev-sertit@unistra.fr"
-__url__ = "https://github.com/sertit/eosets"
-__license__ = "Apache 2.0"
-__copyright__ = "Copyright 2023, SERTIT-ICube - France, https://sertit.unistra.fr/"
-__documentation__ = "https://eosets.readthedocs.io/en/latest/"

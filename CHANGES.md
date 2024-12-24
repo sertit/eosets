@@ -2,6 +2,8 @@
 
 ## 0.2.6 (2024-mm-dd)
 
+- **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**
+- **ENH: Use `pyproject.toml` instead of `setup.py`**
 - FIX: Don't fail in case of a string is given as Mosaic path. 
 - FIX: Update and refactor types 
 
