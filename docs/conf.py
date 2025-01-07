@@ -64,7 +64,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "eosets"
-copyright = "Copyright 2024, SERTIT-ICube - France, https://sertit.unistra.fr/"
+copyright = "Copyright 2025, SERTIT-ICube - France, https://sertit.unistra.fr/"
 author = "ICube-SERTIT"
 
 # The version info for the project you're documenting, acts as replacement for
