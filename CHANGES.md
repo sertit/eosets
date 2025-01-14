@@ -1,6 +1,6 @@
 # Release History
 
-## 0.3.0 (2024-mm-dd)
+## 0.3.0 (2025-01-14)
 
 - **ENH: Allow to give `eoreader.Product` instead of paths to create any Set** ([#8](https://github.com/sertit/eoreader/issues/8))
 - **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**
