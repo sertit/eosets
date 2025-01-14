@@ -2,7 +2,7 @@
 
 ## 0.3.0 (2025-01-14)
 
-- **ENH: Allow to give `eoreader.Product` instead of paths to create any Set** ([#8](https://github.com/sertit/eoreader/issues/8))
+- **ENH: Allow to give `eoreader.Product` instead of paths to create any Set** ([#8](https://github.com/sertit/eosets/issues/8))
 - **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**
 - **ENH: Use `pyproject.toml` instead of `setup.py`**
 - FIX: Don't fail in case of a string is given as Mosaic path. 
@@ -27,7 +27,7 @@
 ## 0.2.2 (2024-10-08)
 
 - ENH: Add `is_sar` and `is_optical` member to any `Set`
-- FIX: Fix Mosaic stacking with multi-resolution constellations ([#6](https://github.com/sertit/eoreader/issues/6))
+- FIX: Fix Mosaic stacking with multi-resolution constellations ([#6](https://github.com/sertit/eosets/issues/6))
 - CI: Test with S3-stored products
 - PUBLISH: Use PyPI's Trusted Publisher Management mechanism
 
