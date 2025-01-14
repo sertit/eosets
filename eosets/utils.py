@@ -16,6 +16,8 @@
 """Utils file"""
 
 from eoreader import utils
+from eoreader.products import Product
+from sertit.types import AnyPathStrType
 
 read = utils.read
 write = utils.write
@@ -32,3 +34,5 @@ except ImportError:
     from eoreader.bands import BandType
 
     BandsType = Union[list, BandType]
+
+AnyProductType = Union[AnyPathStrType, Product]

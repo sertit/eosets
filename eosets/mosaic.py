@@ -38,7 +38,7 @@ from sertit.types import AnyPathStrType
 from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.set import GeometryCheck, GeometryCheckType, Set
-from eosets.utils import BandsType, stack
+from eosets.utils import AnyProductType, BandsType, stack
 
 READER = Reader()
 
@@ -58,7 +58,7 @@ class Mosaic(Set):
 
     def __init__(
         self,
-        paths: Union[list, AnyPathStrType],
+        paths: Union[list, AnyProductType],
         output_path: AnyPathStrType = None,
         id: str = None,
         remove_tmp: bool = True,
@@ -121,7 +121,7 @@ class Mosaic(Set):
 
     def _manage_prods(
         self,
-        paths: Union[list, AnyPathStrType],
+        paths: Union[list, AnyProductType],
         contiguity_check: GeometryCheck,
         **kwargs,
     ):
@@ -129,20 +129,40 @@ class Mosaic(Set):
         Manage products attributes and check the compatibility of the mosaic's components
 
         Args:
-            paths (Union[list, AnyPathStrType]): Paths of the mosaic
+            paths (Union[list, AnyProductType]): Paths of the mosaic
             contiguity_check (GeometryCheck): Method to check the contiguity of the mosaic
             **kwargs: Other arguments
 
         Raises:
             IncompatibleProducts: Incompatible products if not contiguous or not the same date
         """
+
+        def __open(prod_or_path: AnyProductType) -> Product:
+            """Open an EOReader product"""
+            if path.is_path(prod_or_path):
+                prod_: Product = READER.open(
+                    prod_or_path,
+                    remove_tmp=self._remove_tmp,
+                    output_path=self._get_tmp_folder(writable=True),
+                    **kwargs,
+                )
+            elif isinstance(prod_or_path, Product):
+                prod_ = prod_or_path
+            else:
+                raise NotImplementedError(
+                    "You should give either a path or 'eoreader.Product' to build your Mosaic!"
+                )
+
+            if prod_ is None:
+                raise ValueError(
+                    f"There is no existing products in EOReader corresponding to {paths[0]}"
+                )
+
+            return prod_
+
         if types.is_iterable(paths):
             ref_path = paths[0]
-            assert path.is_path(ref_path), "You should give paths to build your Mosaic!"
         else:
-            assert path.is_path(
-                paths
-            ), "You should give at least one path for your Mosaic!"
             ref_path = paths
             paths = [paths]
 
@@ -150,31 +170,13 @@ class Mosaic(Set):
         self.nof_prods = len(paths)
 
         # Open first product as a reference
-        first_prod: Product = READER.open(
-            ref_path,
-            remove_tmp=self._remove_tmp,
-            output_path=self._get_tmp_folder(writable=True),
-            **kwargs,
-        )
-        if first_prod is None:
-            raise ValueError(
-                f"There is no existing products in EOReader corresponding to {paths[0]}"
-            )
+        first_prod = __open(ref_path)
 
         self.prods[first_prod.condensed_name] = first_prod
 
         # Open others
         for prod_path in paths[1:]:
-            prod: Product = READER.open(
-                prod_path,
-                remove_tmp=self._remove_tmp,
-                output_path=self._get_tmp_folder(writable=True),
-                **kwargs,
-            )
-            if prod is None:
-                raise ValueError(
-                    f"There is no existing products in EOReader corresponding to {prod_path}"
-                )
+            prod = __open(prod_path)
 
             # Ensure compatibility of the mosaic component, i.e. unique date and contiguous product
             self.prods[prod.condensed_name] = prod
@@ -533,5 +535,5 @@ class Mosaic(Set):
         return xarr
 
 
-AnyMosaicType = Union[list, AnyPathStrType, Product, Mosaic]
+AnyMosaicType = Union[list, AnyProductType, Mosaic]
 """ Any Mosaic type (either a list or paths or products, a path, a product or a mosaic itself) """

@@ -1,7 +1,8 @@
 # Release History
 
-## 0.2.6 (2024-mm-dd)
+## 0.3.0 (2024-mm-dd)
 
+- **ENH: Allow to give `eoreader.Product` instead of paths to create any Set** ([#8](https://github.com/sertit/eoreader/issues/8))
 - **ENH: Drop `isort`, `black` and `flake8` and use `ruff`**
 - **ENH: Use `pyproject.toml` instead of `setup.py`**
 - FIX: Don't fail in case of a string is given as Mosaic path. 

@@ -4,6 +4,7 @@ import os
 import pytest
 from eoreader.bands import BLUE, GREEN, NIR, PAN, RED
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER, DEM_PATH
+from eoreader.reader import Reader
 from sertit import ci
 from tempenv import tempenv
 
@@ -185,6 +186,30 @@ def test_pair_no_secondary(tmp_path):
         ],
     }
     _test_pair_core(l8_paths, tmp_path)
+
+
+def test_pair_from_custom_prod(tmp_path):
+    with tempenv.TemporaryEnvironment(
+        {CI_EOREADER_BAND_FOLDER: get_ci_pair_data_dir()}
+    ):
+        output = get_output(tmp_path, "PAIR", ON_DISK)
+
+        # Get a custom stack path
+        pld_psh_path = data_folder() / "pld_psh.tif"
+
+        # Create object
+        pld_psh = Reader().open(
+            pld_psh_path,
+            custom=True,
+            sensor_type="OPTICAL",
+            band_map={"BLUE": 1, "GREEN": 2, "RED": 3, "NIR": 4},
+        )
+        pair = Pair(**{"reference_paths": pld_psh}, remove_tmp=not ON_DISK)
+        pair.output = os.path.join(output, pair.condensed_name)
+        pair.stack(
+            ["NDVI"],
+            pixel_size=60,
+        )
 
 
 @s3_env

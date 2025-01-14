@@ -4,6 +4,7 @@ import os
 import pytest
 from eoreader.bands import RED
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER
+from eoreader.reader import Reader
 from sertit import ci
 from tempenv import tempenv
 
@@ -121,3 +122,27 @@ def test_mono_series(tmp_path):
         series.stack(RED, window=aoi_path, pixel_size=60)
 
         # Just see if this doesn't fail
+
+
+def test_series_from_custom_prod(tmp_path):
+    with tempenv.TemporaryEnvironment(
+        {CI_EOREADER_BAND_FOLDER: get_ci_series_data_dir()}
+    ):
+        output = get_output(tmp_path, "SERIES", ON_DISK)
+
+        # Get a custom stack path
+        pld_psh_path = data_folder() / "pld_psh.tif"
+
+        # Create object
+        pld_psh = Reader().open(
+            pld_psh_path,
+            custom=True,
+            sensor_type="OPTICAL",
+            band_map={"BLUE": 1, "GREEN": 2, "RED": 3, "NIR": 4},
+        )
+        series = Series([pld_psh], remove_tmp=not ON_DISK)
+        series.output = os.path.join(output, series.condensed_name)
+        series.stack(
+            ["NDVI"],
+            pixel_size=60,
+        )

@@ -5,6 +5,7 @@ import os
 import pytest
 from eoreader.bands import NBR, NDVI, RED
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER, DEM_PATH
+from eoreader.reader import Reader
 from sertit import ci
 from tempenv import tempenv
 
@@ -129,6 +130,35 @@ def test_mono_mosaic(tmp_path):
         ci.assert_val(mosaic.is_sar, False, "Is SAR?")
 
         # Just see if this doesn't fail
+
+
+def test_mosaic_from_custom_prod(tmp_path):
+    with tempenv.TemporaryEnvironment(
+        {CI_EOREADER_BAND_FOLDER: get_ci_mosaic_data_dir()}
+    ):
+        output = get_output(tmp_path, "MOSAIC", ON_DISK)
+
+        # Get a custom stack path
+        pld_psh_path = data_folder() / "pld_psh.tif"
+
+        # Create object
+        pld_psh = Reader().open(
+            pld_psh_path,
+            custom=True,
+            sensor_type="OPTICAL",
+            band_map={"BLUE": 1, "GREEN": 2, "RED": 3, "NIR": 4},
+        )
+        mosaic = Mosaic(pld_psh, mosaic_method="VRT", remove_tmp=not ON_DISK)
+        mosaic.output = os.path.join(output, mosaic.condensed_name)
+        mosaic.stack(
+            [NDVI],
+            pixel_size=60,
+        )
+
+        # Some checks
+        # TODO: add more
+        ci.assert_val(mosaic.is_optical, True, "Is Optical?")
+        ci.assert_val(mosaic.is_sar, False, "Is SAR?")
 
 
 def test_ci_eoreader_band_folder(tmp_path):
