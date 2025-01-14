@@ -38,13 +38,18 @@ shapely>=2.0.0
 # Spectral indices
 spyndex>=0.3.0
 
-# Optimizations
-dask[complete]>=2021.10.0
+# Dask
+dask>=2024.5.1
+distributed
+s3fs
+cytoolz
+
+# Caching
 methodtools
 
 # Plot
 matplotlib
 
 # Sertit libs
-eoreader>=0.21.3
-sertit[full]>=1.42.2
+eoreader>=0.21.8
+sertit[full]>=1.44.5
