@@ -15,6 +15,8 @@
 # limitations under the License.
 """Utils file"""
 
+from typing import Union
+
 from eoreader import utils
 from eoreader.products import Product
 from sertit.types import AnyPathStrType
@@ -23,16 +25,15 @@ read = utils.read
 write = utils.write
 stack = utils.stack
 
+AnyProductType = Union[AnyPathStrType, Product]
+""" Any Product Type, either a path or an eoreader.Product"""
+
 # Bands Type
 try:
     from eoreader.bands import BandsType
 
     BandsType = BandsType
 except ImportError:
-    from typing import Union
-
     from eoreader.bands import BandType
 
     BandsType = Union[list, BandType]
-
-AnyProductType = Union[AnyPathStrType, Product]

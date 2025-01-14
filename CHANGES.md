@@ -1,5 +1,9 @@
 # Release History
 
+## 0.3.1 (2025-01-14)
+
+- FIX: Fixing import in utils
+
 ## 0.3.0 (2025-01-14)
 
 - **ENH: Allow to give `eoreader.Product` instead of paths to create any Set** ([#8](https://github.com/sertit/eosets/issues/8))
