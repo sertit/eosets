@@ -141,6 +141,14 @@ htmlhelp_basename = "eosetsdoc"
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "python-request": ("https://docs.python-requests.org/en/master/", None),
+    "rasterio": ("https://rasterio.readthedocs.io/en/latest", None),
+    "rioxarray": ("https://corteva.github.io/rioxarray/latest/", None),
+    "geopandas": ("https://geopandas.org/en/latest", None),
+    "xarray": ("https://docs.xarray.dev/en/latest", None),
+    "cloudpathlib": ("https://cloudpathlib.drivendata.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "sertit": ("sertit-utils.readthedocs.io/en/stable", None),
+    "eoreader": (" eoreader.readthedocs.io/en/latest/", None),
 }
 
 add_function_parentheses = False
