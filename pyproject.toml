@@ -56,7 +56,7 @@ version = {attr = "eosets.__version__"}
 
 [project.urls]
 Bug_Tracker = "https://github.com/sertit/eosets/issues"
-Documentation =  "https://eosets.readthedocs.io/en/latest/"
+Documentation =  "https://eosets.readthedocs.io/latest/"
 Source_Code = "https://github.com/sertit/eosets"
 
 [tool.ruff]

@@ -23,6 +23,6 @@ Implemented features are similar to those implemented in EOReader:
 
 Available notebooks provided as examples:
 
-- [Mosaic](https://eosets.readthedocs.io/en/latest/notebooks/mosaic.html#)
-- [Pair](https://eosets.readthedocs.io/en/latest/notebooks/pair.html)
-- [Series](https://eosets.readthedocs.io/en/latest/notebooks/series.html)
+- [Mosaic](https://eosets.readthedocs.io/latest/notebooks/mosaic.html#)
+- [Pair](https://eosets.readthedocs.io/latest/notebooks/pair.html)
+- [Series](https://eosets.readthedocs.io/latest/notebooks/series.html)
