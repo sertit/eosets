@@ -157,7 +157,8 @@ class Mosaic(Set):
                 raise ValueError(
                     f"There is no existing products in EOReader corresponding to {paths[0]}"
                 )
-
+            # Set output
+            prod_.output = self._get_tmp_folder(writable=True)
             return prod_
 
         if types.is_iterable(paths):

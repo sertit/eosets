@@ -26,7 +26,7 @@ from typing import Any, Union
 
 import geopandas as gpd
 import xarray as xr
-from eoreader.bands import BandType, to_str
+from eoreader.bands import BandType, to_band, to_str
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER
 from eoreader.products import Product, SensorType
 from sertit import AnyPath, files, path
@@ -207,10 +207,15 @@ class Set:
         self._manage_output()
 
         # Move all files from old process folder into the new one
-        for file in path.listdir_abspath(old_tmp_process):
-            # Don't overwrite file
-            with contextlib.suppress(shutil.Error):
-                shutil.move(str(file), self._tmp_process)
+        if old_tmp_process.exists():
+            for file in path.listdir_abspath(old_tmp_process):
+                # Don't overwrite file
+                with contextlib.suppress(shutil.Error):
+                    shutil.move(str(file), self._tmp_process)
+
+        # Remove old tmp process
+        if old_tmp_process is not None:
+            files.remove(old_tmp_process)
 
         # Remove old output if existing into the new output
         if self._tmp_output:
@@ -486,7 +491,7 @@ class Set:
         # Get the bands to be loaded
         bands_path = {}
         bands_to_load = []
-        for band in bands:
+        for band in to_band(bands):
             band_path, exists = self._get_out_path(
                 f"{self.id}_{to_str(band)[0]}.{out_suffix}"
             )

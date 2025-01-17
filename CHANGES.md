@@ -1,5 +1,9 @@
 # Release History
 
+## 0.3.2 (2025-mm-dd)
+
+- FIX: Correctly delete old temporary process folder if a new output is given.
+
 ## 0.3.1 (2025-01-14)
 
 - FIX: Fixing import in utils
