@@ -356,8 +356,8 @@ class Pair(Set):
                     # To be sure, always collocate arrays, even if the size is the same
                     # Indeed, a small difference in the coordinates will lead to empy arrays
                     # So the bands MUST BE exactly aligned
-                    sec_arr = sec_arr.rio.reproject_match(
-                        ref_arr, resampling=resampling, **kwargs
+                    sec_arr = rasters.collocate(
+                        ref_arr, sec_arr, resampling=resampling, **kwargs
                     )
 
                     # Nans are conserved with +/-
