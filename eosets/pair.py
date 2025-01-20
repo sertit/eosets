@@ -305,6 +305,16 @@ class Pair(Set):
         if diff_bands is None:
             diff_bands = []
 
+        # Manage the case where the pair has no secondary
+        if secondary_bands and not self.has_secondary:
+            LOGGER.warning("This pair does not have secondary bands.")
+            secondary_bands = []
+        if diff_bands and not self.has_secondary:
+            LOGGER.warning(
+                "This pair does not have secondary bands. Impoossible to compute difference bands."
+            )
+            diff_bands = []
+
         reference_bands = to_band(reference_bands)
         secondary_bands = to_band(secondary_bands)
         diff_bands = to_band(diff_bands)
@@ -468,6 +478,16 @@ class Pair(Set):
         if secondary_bands is None:
             secondary_bands = []
         if diff_bands is None:
+            diff_bands = []
+
+        # Manage the case where the pair has no secondary
+        if secondary_bands and not self.has_secondary:
+            LOGGER.warning("This pair does not have secondary bands.")
+            secondary_bands = []
+        if diff_bands and not self.has_secondary:
+            LOGGER.warning(
+                "This pair does not have secondary bands. Impoossible to compute difference bands."
+            )
             diff_bands = []
 
         reference_bands = to_band(reference_bands)
