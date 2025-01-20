@@ -18,16 +18,14 @@
 import contextlib
 import logging
 import os
-import shutil
 from collections import defaultdict
 from enum import unique
-from glob import glob
 from typing import Union
 
 import geopandas as gpd
 import xarray as xr
 from eoreader import cache, utils
-from eoreader.bands import is_spectral_band, to_band, to_str
+from eoreader.bands import to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
@@ -38,7 +36,7 @@ from sertit.types import AnyPathStrType
 from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.set import GeometryCheck, GeometryCheckType, Set
-from eosets.utils import AnyProductType, BandsType, stack
+from eosets.utils import AnyProductType, BandsType, look_for_prod_band_file, stack
 
 READER = Reader()
 
@@ -143,7 +141,6 @@ class Mosaic(Set):
                 prod_: Product = READER.open(
                     prod_or_path,
                     remove_tmp=self._remove_tmp,
-                    output_path=self._get_tmp_folder(writable=True),
                     **kwargs,
                 )
             elif isinstance(prod_or_path, Product):
@@ -370,36 +367,18 @@ class Mosaic(Set):
                     pixel_size = prod.pixel_size
 
                 # Load bands
-                prod.load(bands_to_load, pixel_size, **kwargs).keys()
+                prod.load(bands_to_load, pixel_size, **kwargs)
 
                 # Store paths
                 for band in bands_to_load:
-                    if is_spectral_band(band):
-                        band_path = prod.get_band_paths([band], pixel_size, **kwargs)[
-                            band
-                        ]
-                    else:
-                        band_regex = f"*{prod.condensed_name}*_{to_str(band)[0]}_*"
-                        # Use glob fct as _get_band_folder is a tmpDirectory
-                        try:
-                            # Check if the band exists in a non-writable directory
-                            band_path = glob(
-                                os.path.join(
-                                    prod._get_band_folder(writable=False), band_regex
-                                )
-                            )[0]
-                        except IndexError:
-                            # Check if the band exists in a writable directory
-                            band_path = glob(
-                                os.path.join(
-                                    prod._get_band_folder(writable=True), band_regex
-                                )
-                            )[0]
-
+                    band_path = look_for_prod_band_file(
+                        prod, band, pixel_size, **kwargs
+                    )
                     prod_band_paths[band].append(str(band_path))
 
         # Merge
         merged_dict = {}
+
         for band in bands_path:
             output_path = bands_path[band]
             if not output_path.is_file():
@@ -407,19 +386,13 @@ class Mosaic(Set):
                     LOGGER.debug(f"Merging bands {to_str(band)[0]}")
                     if self.mosaic_method == MosaicMethod.VRT:
                         prod_paths = []
-                        for prod_path in prod_band_paths[band]:
+                        for band_path in prod_band_paths[band]:
                             out_path, exists = self._get_out_path(
-                                os.path.basename(prod_path)
+                                os.path.basename(band_path)
                             )
                             if not exists:
-                                if AnyPath(prod_path).parent.is_relative_to(
-                                    self.output
-                                ):
-                                    # If EOReader's band: move
-                                    shutil.move(prod_path, out_path)
-                                else:
-                                    # If raw product's band: copy
-                                    files.copy(prod_path, out_path)
+                                # Copy any band, even EOReader's as this band may be needed several times in indices computation (don't move it)
+                                files.copy(band_path, out_path)
                             prod_paths.append(out_path)
                     else:
                         prod_paths = prod_band_paths[band]
@@ -427,13 +400,8 @@ class Mosaic(Set):
                     # Don't pass kwargs here because of unwanted errors
                     merge_fct(prod_paths, output_path)
                 else:
-                    prod_path = prod_band_paths[band][0]
-                    if AnyPath(prod_path).parent.is_relative_to(self.output):
-                        # If EOReader's band: move
-                        shutil.move(prod_path, output_path)
-                    else:
-                        # If raw product's band: copy
-                        files.copy(prod_path, output_path)
+                    # Copy any band, even EOReader's as this band may be needed several times in indices computation (don't move it)
+                    files.copy(prod_band_paths[band][0], output_path)
 
             # Load in memory and update attribute
             merged_dict[band] = self._update_attrs(

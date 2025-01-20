@@ -15,11 +15,13 @@
 # limitations under the License.
 """Utils file"""
 
+import contextlib
 from typing import Union
 
 from eoreader import utils
 from eoreader.products import Product
-from sertit.types import AnyPathStrType
+from sertit import AnyPath
+from sertit.types import AnyPathStrType, AnyPathType
 
 read = utils.read
 write = utils.write
@@ -28,12 +30,95 @@ stack = utils.stack
 AnyProductType = Union[AnyPathStrType, Product]
 """ Any Product Type, either a path or an eoreader.Product"""
 
-# Bands Type
+# Band(s) Type
 try:
-    from eoreader.bands import BandsType
+    from eoreader.bands import (
+        BandNames,
+        BandsType,
+        CloudsBandNames,
+        DemBandNames,
+        SarBandNames,
+        SpectralBandNames,
+        is_spectral_band,
+        to_str,
+    )
 
+    BandType = Union[
+        str, SpectralBandNames, SarBandNames, CloudsBandNames, DemBandNames, BandNames
+    ]
     BandsType = BandsType
 except ImportError:
     from eoreader.bands import BandType
 
     BandsType = Union[list, BandType]
+
+
+def look_for_prod_band_file(prod: Product, band: BandType, pixel_size: float, **kwargs):
+    """
+    Look for a product's band file
+
+    Args:
+        prod (Product): Product to look in
+        band (BandType): Band to look for
+        pixel_size (float): Pixel size in meters (if needed)
+        **kwargs: Other args
+
+    Returns:
+        AnyPathType: Band file path
+    """
+    band_path = _look_for_prod_band_file(
+        prod, band, pixel_size, writable=False, **kwargs
+    )
+
+    if band_path is None:
+        band_path = _look_for_prod_band_file(
+            prod, band, pixel_size, writable=True, **kwargs
+        )
+
+    if band_path is None:
+        raise FileNotFoundError(
+            f"Non-existing processed band {to_str(band)[0]} in {prod.condensed_name}!"
+        )
+
+    return band_path
+
+
+def _look_for_prod_band_file(
+    prod: Product, band: BandType, pixel_size: float, writable: bool, **kwargs
+) -> AnyPathType:
+    """
+    Look for a product's band file
+
+    Args:
+        prod (Product): Product to look in
+        band (BandType): Band to look for
+        pixel_size (float): Pixel size in meters (if needed)
+        writable (bool): Whether to force look in writable folder or not
+        **kwargs: Other args
+
+    Returns:
+        AnyPathType: Band file path
+    """
+    band_path = None
+
+    # Get the band name
+    band_name = to_str(band)[0]
+
+    # Spectral band case : use dedicated function
+    if is_spectral_band(band):
+        band_path = prod.get_band_paths(
+            [band], pixel_size, writable=writable, **kwargs
+        )[band]
+
+        # Check if the band exists in a writable directory if not existing in the default one
+        if not AnyPath(band_path).is_file():
+            band_path = None
+
+    else:
+        # No window in non-spectral paths (for now ?)
+        with contextlib.suppress(StopIteration):
+            # Check if the band exists in a non-writable directory
+            band_regex = f"*{prod.condensed_name}*_{band_name}_*"
+            band_path = next(prod._get_band_folder(writable=writable).glob(band_regex))
+
+    return band_path
