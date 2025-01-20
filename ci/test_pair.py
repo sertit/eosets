@@ -96,19 +96,20 @@ def _test_pair_core(paths: dict, tmp_path) -> None:
         # TODO: check with input mosaic, check secondary-reference
 
         # Test to see if there is an error
+        bands = [NIR, "NDVI"]
         pair.load(
-            diff_bands=RED,
+            diff_bands=bands,
             window=aoi_path,
             pixel_size=60,
         )
 
         # Stack with a pixel_size of 60m
-        pair_out = pair.output / "red_stack.tif"
-        assert pair.has_bands(RED)
+        pair_out = pair.output / "stack.tif"
+        assert pair.has_bands(bands)
         pair.stack(
-            reference_bands=RED,
-            secondary_bands=RED,
-            diff_bands=RED,
+            reference_bands=bands,
+            secondary_bands=bands,
+            diff_bands=bands,
             window=aoi_path,
             pixel_size=60,
             stack_path=pair_out,
@@ -118,7 +119,7 @@ def _test_pair_core(paths: dict, tmp_path) -> None:
         if ON_DISK:
             ci_path = pair_out
         else:
-            ci_path = pair_folder() / pair.condensed_name / "red_stack.tif"
+            ci_path = pair_folder() / pair.condensed_name / "stack.tif"
 
         ci.assert_raster_almost_equal(pair_out, ci_path)
 

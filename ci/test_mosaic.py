@@ -3,7 +3,7 @@
 import os
 
 import pytest
-from eoreader.bands import NBR, NDVI, RED
+from eoreader.bands import NBR, NDVI, NIR
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER, DEM_PATH
 from eoreader.reader import Reader
 from sertit import ci
@@ -76,10 +76,11 @@ def test_s2_mosaic(tmp_path):
         compare_geom("footprint", mosaic, mosaic_folder(), ON_DISK)
 
         # Stack with a pixel_size of 600m
-        mosaic_out = mosaic.output / "red_stack.tif"
-        assert mosaic.has_bands(RED)
+        mosaic_out = mosaic.output / "stack.tif"
+        bands = [NIR, "NDVI"]
+        assert mosaic.has_bands(bands)
         mosaic.stack(
-            [RED],
+            bands,
             stack_path=mosaic_out,
             pixel_size=600,
         )
