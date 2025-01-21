@@ -128,8 +128,9 @@ def _test_pair_core(paths: dict, tmp_path) -> None:
             pair.read_mtd()
 
         # Clean everything
-        pair.clear()
-        pair.clean_tmp()
+        if not ON_DISK:
+            pair.clear()
+            pair.clean_tmp()
 
 
 @s3_env

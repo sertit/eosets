@@ -98,8 +98,9 @@ def test_s2_mosaic(tmp_path):
             mosaic.read_mtd()
 
         # Clean everything
-        mosaic.clear()
-        mosaic.clean_tmp()
+        if not ON_DISK:
+            mosaic.clear()
+            mosaic.clean_tmp()
 
 
 @s3_env

@@ -94,8 +94,9 @@ def test_s2_series(tmp_path):
             series.read_mtd()
 
         # Clean everything
-        series.clear()
-        series.clean_tmp()
+        if not ON_DISK:
+            series.clear()
+            series.clean_tmp()
 
 
 @s3_env
