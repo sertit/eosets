@@ -1,6 +1,6 @@
 # Release History
 
-## 0.3.2 (2025-mm-dd)
+## 0.3.2 (2025-01-22)
 
 - FIX: Correctly delete old temporary process folder if a new output is given.
 - FIX: Correctly look for band files in product's temporary directory
