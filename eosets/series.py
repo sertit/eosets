@@ -179,9 +179,9 @@ class Series(Set):
 
         """
         # Information regarding the pair composition
-        assert types.is_iterable(
-            mosaic_paths
-        ), "You should give a list of paths or Mosaics to create your Series!"
+        assert types.is_iterable(mosaic_paths), (
+            "You should give a list of paths or Mosaics to create your Series!"
+        )
 
         self.mosaics: list[Mosaic] = []
         for paths in mosaic_paths:
