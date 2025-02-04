@@ -349,9 +349,9 @@ class Mosaic(Set):
         # Check validity of the bands
         for prod in self.get_prods():
             for band in bands_to_load:
-                assert prod.has_band(
-                    band
-                ), f"{prod.condensed_name} has not a {to_str(band)[0]} band."
+                assert prod.has_band(band), (
+                    f"{prod.condensed_name} has not a {to_str(band)[0]} band."
+                )
 
         # Load and reorganize bands
         prod_band_paths = defaultdict(list)
