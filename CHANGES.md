@@ -1,6 +1,6 @@
 # Release History
 
-## 0.3.3 (2025-01-22)
+## 0.3.3 (2025-04-08)
 
 - FIX: Adapt the code to `eoreader>=0.22.0`
 - DEPS: Update `sertit` and `eoreader`
