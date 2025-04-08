@@ -24,7 +24,7 @@ from typing import Union
 
 import geopandas as gpd
 import xarray as xr
-from eoreader import cache, utils
+from eoreader import cache
 from eoreader.bands import to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
@@ -36,7 +36,13 @@ from sertit.types import AnyPathStrType
 from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.set import GeometryCheck, GeometryCheckType, Set
-from eosets.utils import AnyProductType, BandsType, look_for_prod_band_file, stack
+from eosets.utils import (
+    AnyProductType,
+    BandsType,
+    look_for_prod_band_file,
+    read,
+    stack,
+)
 
 READER = Reader()
 
@@ -404,9 +410,7 @@ class Mosaic(Set):
                     files.copy(prod_band_paths[band][0], output_path)
 
             # Load in memory and update attribute
-            merged_dict[band] = self._update_attrs(
-                utils.read(output_path), bands, **kwargs
-            )
+            merged_dict[band] = self._update_attrs(read(output_path), bands, **kwargs)
 
         # Collocate VRTs
         LOGGER.debug("Collocating bands")
@@ -449,7 +453,7 @@ class Mosaic(Set):
         if stack_path:
             stack_path = AnyPath(stack_path)
             if stack_path.is_file():
-                return utils.read(stack_path, pixel_size=pixel_size)
+                return read(stack_path, pixel_size=pixel_size)
             else:
                 os.makedirs(str(stack_path.parent), exist_ok=True)
 
@@ -461,15 +465,14 @@ class Mosaic(Set):
             nodata = kwargs.get("nodata", UINT16_NODATA)
         else:
             nodata = kwargs.get("nodata", self.nodata)
-        stk, dtype = stack(band_ds, save_as_int, nodata, **kwargs)
+        stk, dtype = stack(band_ds, nodata=nodata, **kwargs)
 
         # Update stack's attributes
         stk = self._update_attrs(stk, bands, **kwargs)
 
         # Write on disk
         if stack_path:
-            LOGGER.debug("Saving stack")
-            utils.write(stk, stack_path, dtype=dtype, **kwargs)
+            self._write_stack(band_ds, stk, stack_path, save_as_int, dtype, **kwargs)
 
         return stk
 

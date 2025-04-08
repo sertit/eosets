@@ -25,6 +25,7 @@ from enum import unique
 from typing import Any, Union
 
 import geopandas as gpd
+import numpy as np
 import xarray as xr
 from eoreader.bands import BandType, to_band, to_str
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER
@@ -35,7 +36,7 @@ from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
 
 from eosets import EOSETS_NAME
 from eosets.env_vars import CI_EOSETS_BAND_FOLDER
-from eosets.utils import BandsType
+from eosets.utils import BandsType, convert_to_uint16, stack, write, write_path_in_attrs
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 
@@ -500,3 +501,44 @@ class Set:
                 bands_to_load.append(band)
 
         return bands_to_load, bands_path
+
+    def _write_stack(
+        self,
+        band_ds: xr.Dataset,
+        stk: xr.DataArray,
+        stack_path: AnyPathStrType,
+        save_as_int: bool,
+        dtype,
+        **kwargs,
+    ):
+        """
+        Write stack
+
+        Args:
+            band_ds (xr.Dataset): Dataset containing all the bands
+            stk (xr.DataArray): Default stack
+            stack_path (AnyPathStrType): Stack path
+            save_as_int (bool): Convert stack to uint16 to save disk space (and therefore multiply the values by 10.000)
+            **kwargs: Other arguments passed to :code:`load` or :code:`rioxarray.to_raster()` (such as :code:`compress`)
+
+        Returns:
+            xr.DataArray: Stack as a DataArray
+        """
+        LOGGER.debug("Saving stack")
+        # Convert to uint16 only for the stack written on disk
+        # (sadly, we have to restack the dataset a second time...)
+        stack_to_save = None
+        if save_as_int:
+            stack_to_save, dtype = convert_to_uint16(band_ds)
+            if dtype == np.uint16:
+                stack_to_save, _ = stack(band_ds, dtype=dtype, **kwargs)
+                stack_to_save = self._update_attrs(
+                    stack_to_save, band_ds.keys(), **kwargs
+                )
+
+        if stack_to_save is None:
+            stack_to_save = stk
+
+        stack_to_save = write_path_in_attrs(stack_to_save, stack_path)
+
+        write(stack_to_save, stack_path, dtype=dtype, **kwargs)

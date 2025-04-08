@@ -1,5 +1,9 @@
 # Release History
 
+## 0.3.3 (2025-01-22)
+
+- FIX: Adapt the code to `eoreader>=0.22.0`
+
 ## 0.3.2 (2025-01-22)
 
 - FIX: Correctly delete old temporary process folder if a new output is given.

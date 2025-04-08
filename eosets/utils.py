@@ -16,6 +16,7 @@
 """Utils file"""
 
 import contextlib
+import logging
 from typing import Union
 
 from eoreader import utils
@@ -23,12 +24,18 @@ from eoreader.products import Product
 from sertit import AnyPath
 from sertit.types import AnyPathStrType, AnyPathType
 
+from eosets import EOSETS_NAME
+
 read = utils.read
 write = utils.write
 stack = utils.stack
+convert_to_uint16 = utils.convert_to_uint16
+write_path_in_attrs = utils.write_path_in_attrs
 
 AnyProductType = Union[AnyPathStrType, Product]
 """ Any Product Type, either a path or an eoreader.Product"""
+
+LOGGER = logging.getLogger(EOSETS_NAME)
 
 # Band(s) Type
 try:
