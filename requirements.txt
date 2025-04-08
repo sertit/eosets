@@ -51,5 +51,5 @@ methodtools
 matplotlib
 
 # Sertit libs
-eoreader>=0.21.8
-sertit[full]>=1.44.5
+eoreader>=0.22.0
+sertit[full]>=1.46.4
