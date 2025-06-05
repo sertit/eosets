@@ -1,7 +1,8 @@
 # Release History
 
-## 0.3.4 (2025-04-08)
+## 0.3.4 (2025-mm-dd)
 
+- FIX: Fix pair creation with paths instead of list of paths
 - CI: Fix scheduled pipeline
 
 ## 0.3.3 (2025-04-08)

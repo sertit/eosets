@@ -25,7 +25,7 @@ from eoreader import cache
 from eoreader.bands import to_band, to_str
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
-from sertit import AnyPath, rasters
+from sertit import AnyPath, path, rasters
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType
 
@@ -98,6 +98,7 @@ class Pair(Set):
         # Update mosaics of the pair
         if secondary_paths is None:
             secondary_paths = []
+
         self._manage_mosaics(
             reference_paths, secondary_paths, contiguity_check, overlap_check
         )
@@ -193,7 +194,9 @@ class Pair(Set):
         self.reference_id: str = self.reference_mosaic.id
 
         # Information regarding the pair composition
-        self.has_secondary: bool = len(secondary_paths) > 0
+        self.has_secondary: bool = (
+            path.is_path(secondary_paths) or len(secondary_paths) > 0
+        )
 
         if self.has_secondary:
             if isinstance(reference_paths, Mosaic):
