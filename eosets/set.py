@@ -542,3 +542,6 @@ class Set:
         stack_to_save = write_path_in_attrs(stack_to_save, stack_path)
 
         write(stack_to_save, stack_path, dtype=dtype, **kwargs)
+
+    def __len__(self):
+        return len(self.get_prods())

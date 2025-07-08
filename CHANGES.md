@@ -1,8 +1,8 @@
 # Release History
 
-## 0.3.4 (2025-mm-dd)
+## 0.4.0 (2025-mm-dd)
 
-- FIX: Fix pair creation with paths instead of list of paths
+- **ENH: Add the `len()` property to any Set, giving the number of EOReader Products conteined into the Set** 
 - CI: Fix scheduled pipeline
 
 ## 0.3.3 (2025-04-08)

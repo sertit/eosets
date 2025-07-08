@@ -189,5 +189,7 @@ def test_ci_eoreader_band_folder(tmp_path):
         ci.assert_val(mosaic.is_optical, True, "Is Optical?")
         ci.assert_val(mosaic.is_sar, False, "Is SAR?")
 
+        ci.assert_val(len(mosaic), 1, "Number of products")
+
 
 # TODO: Add tests for SAR mosaics

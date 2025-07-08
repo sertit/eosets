@@ -212,6 +212,8 @@ def test_pair_from_custom_prod(tmp_path):
             pixel_size=60,
         )
 
+        ci.assert_val(len(pair), 2, "Number of products")
+
 
 @s3_env
 def test_pair_fail():

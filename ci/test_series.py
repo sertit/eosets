@@ -147,3 +147,5 @@ def test_series_from_custom_prod(tmp_path):
             ["NDVI"],
             pixel_size=60,
         )
+
+        ci.assert_val(len(series), 2, "Number of products")
