@@ -4,6 +4,7 @@
 
 - **ENH: Add the `len()` property to any Set, giving the number of EOReader Products contained into the Set** 
 - FIX: Fix pair creation with paths and Mosaic instead of list of paths
+- FIX: Better management of `condensed_name` / `full_name` and `id`
 - CI: Fix scheduled pipeline
 
 ## 0.3.3 (2025-04-08)

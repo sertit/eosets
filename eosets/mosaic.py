@@ -96,6 +96,20 @@ class Mosaic(Set):
         # Update products of the mosaic
         self._manage_prods(paths, contiguity_check, **kwargs)
 
+        # Create condensed_name: [{date}-{sat_id}_]{???}
+        # TODO: is it OK ?
+        # TODO: if fixed date, change that
+        # TODO: if all same constellation, set it only once
+        # TODO: add sth ?
+        self.condensed_name = (
+            self.id
+            if self.id is not None
+            else f"{self.date.strftime('%Y%m%d')}_{'-'.join(list(set([prod.constellation_id for prod in self.get_prods()])))}"
+        )
+
+        if self.id is None:
+            self.id = self.condensed_name
+
         # Post init at the set level
         self.post_init(**kwargs)
 
@@ -193,16 +207,6 @@ class Mosaic(Set):
         self.full_name = (
             f"{'-'.join([prod.condensed_name for prod in self.get_prods()])}"
         )
-
-        # Create condensed_name: [{date}-{sat_id}_]{???}
-        # TODO: is it OK ?
-        # TODO: if fixed date, change that
-        # TODO: if all same constellation, set it only once
-        # TODO: add sth ?
-        self.condensed_name = f"{self.date.strftime('%Y%m%d')}_{'-'.join(list(set([prod.constellation_id for prod in self.get_prods()])))}"
-
-        if self.id is None:
-            self.id = self.condensed_name
 
     def get_prods(self) -> list:
         """

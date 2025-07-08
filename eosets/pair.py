@@ -108,7 +108,7 @@ class Pair(Set):
         if self.has_secondary:
             self.full_name += f"_{self.secondary_id}"
 
-        self.condensed_name = self.full_name
+        self.condensed_name = self.id if self.id is not None else self.full_name
         # TODO (how to name pair ???)
 
         # Post init at the set level

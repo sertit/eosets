@@ -221,9 +221,10 @@ class Series(Set):
 
         # Fill other attributes
         self.nof_prods = len(self.get_prods())
-        self.id = "_".join(mos.id for mos in self.mosaics)
+        if self.id is None:
+            self.id = "_".join(mos.id for mos in self.mosaics)
         self.full_name = "_".join(mos.full_name for mos in self.mosaics)
-        self.condensed_name = self.full_name
+        self.condensed_name = self.id
 
         self._unique_mosaic = len(self.mosaics) == 1
         # TODO (how to name series ???)
