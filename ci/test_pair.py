@@ -203,9 +203,13 @@ def test_pair_from_custom_prod(tmp_path):
             pld_psh_path,
             custom=True,
             sensor_type="OPTICAL",
+            datetime="20250117T030415",
             band_map={"BLUE": 1, "GREEN": 2, "RED": 3, "NIR": 4},
         )
-        pair = Pair(**{"reference_paths": pld_psh}, remove_tmp=not ON_DISK)
+        pair = Pair(
+            **{"reference_paths": pld_psh, "secondary_paths": pld_psh},
+            remove_tmp=not ON_DISK,
+        )
         pair.output = os.path.join(output, pair.condensed_name)
         pair.stack(
             ["NDVI"],

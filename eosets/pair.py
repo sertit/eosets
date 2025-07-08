@@ -194,13 +194,17 @@ class Pair(Set):
         self.reference_id: str = self.reference_mosaic.id
 
         # Information regarding the pair composition
+        from eoreader.products import Product
+
         self.has_secondary: bool = (
-            path.is_path(secondary_paths) or len(secondary_paths) > 0
+            path.is_path(secondary_paths)
+            or isinstance(secondary_paths, Product)
+            or len(secondary_paths) > 0
         )
 
         if self.has_secondary:
-            if isinstance(reference_paths, Mosaic):
-                self.reference_mosaic = reference_paths
+            if isinstance(secondary_paths, Mosaic):
+                self.secondary_mosaic = secondary_paths
             else:
                 self.secondary_mosaic: Mosaic = Mosaic(
                     secondary_paths,

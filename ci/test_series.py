@@ -138,10 +138,18 @@ def test_series_from_custom_prod(tmp_path):
         pld_psh = Reader().open(
             pld_psh_path,
             custom=True,
+            datetime="20250117T030415",
             sensor_type="OPTICAL",
             band_map={"BLUE": 1, "GREEN": 2, "RED": 3, "NIR": 4},
         )
-        series = Series([pld_psh], remove_tmp=not ON_DISK)
+        pld_psh_2 = Reader().open(
+            pld_psh_path,
+            custom=True,
+            datetime="20250118T030415",
+            sensor_type="OPTICAL",
+            band_map={"BLUE": 1, "GREEN": 2, "RED": 3, "NIR": 4},
+        )
+        series = Series([pld_psh, pld_psh_2], remove_tmp=not ON_DISK)
         series.output = os.path.join(output, series.condensed_name)
         series.stack(
             ["NDVI"],

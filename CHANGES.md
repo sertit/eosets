@@ -2,7 +2,8 @@
 
 ## 0.4.0 (2025-mm-dd)
 
-- **ENH: Add the `len()` property to any Set, giving the number of EOReader Products conteined into the Set** 
+- **ENH: Add the `len()` property to any Set, giving the number of EOReader Products contained into the Set** 
+- FIX: Fix pair creation with paths and Mosaic instead of list of paths
 - CI: Fix scheduled pipeline
 
 ## 0.3.3 (2025-04-08)
