@@ -139,11 +139,11 @@ def test_s2_pair(tmp_path):
     s2_paths = {
         "reference_paths": [
             data_folder()
-            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
+            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.SAFE"
         ],
         "secondary_paths": [
             data_folder()
-            / "S2B_MSIL1C_20200908T110619_N0209_R137_T29TQE_20200908T132324.zip"
+            / "S2B_MSIL1C_20200908T110619_N0209_R137_T29TQE_20200908T132324.SAFE"
         ],
     }
     _test_pair_core(s2_paths, tmp_path)
@@ -182,9 +182,7 @@ def test_l8_pair(tmp_path):
 def test_pair_no_secondary(tmp_path):
     """Test pair object with Landsat-8 products"""
     l8_paths = {
-        "reference_paths": [
-            data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1.tar"
-        ],
+        "reference_paths": [data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1"],
     }
     _test_pair_core(l8_paths, tmp_path)
 
@@ -225,7 +223,7 @@ def test_pair_fail():
     paths = {
         "reference_paths": [
             data_folder()
-            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
+            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.SAFE"
         ],
         "secondary_paths": [
             data_folder()

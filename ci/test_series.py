@@ -34,11 +34,11 @@ def test_s2_series(tmp_path):
     s2_paths = [
         [
             data_folder()
-            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
+            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.SAFE"
         ],
         [
             data_folder()
-            / "S2B_MSIL1C_20200908T110619_N0209_R137_T29TQE_20200908T132324.zip"
+            / "S2B_MSIL1C_20200908T110619_N0209_R137_T29TQE_20200908T132324.SAFE"
         ],
     ]
     aoi_path = data_folder() / "Fire_Spain.geojson"
@@ -110,7 +110,7 @@ def test_mono_series(tmp_path):
         s2_paths = [
             [
                 data_folder()
-                / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.zip"
+                / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.SAFE"
             ],
         ]
         aoi_path = data_folder() / "Fire_Spain.geojson"
