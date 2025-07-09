@@ -170,10 +170,8 @@ def test_l8_pair(tmp_path):
     """Test pair object with Landsat-8 products"""
     # Test paths without a list
     l8_paths = {
-        "reference_paths": data_folder()
-        / "LC08_L1TP_202032_20200828_20200906_02_T1.tar",
-        "secondary_paths": data_folder()
-        / "LC08_L1TP_202032_20200929_20201006_02_T1.tar",
+        "reference_paths": data_folder() / "LC08_L1TP_202032_20200828_20200906_02_T1",
+        "secondary_paths": data_folder() / "LC08_L1TP_202032_20200929_20201006_02_T1",
     }
     _test_pair_core(l8_paths, tmp_path)
 
