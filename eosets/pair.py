@@ -346,6 +346,10 @@ class Pair(Set):
         # -- Load bands
         window = kwargs.pop("window", self.footprint())
 
+        # Override default pixel size
+        if pixel_size is None:
+            pixel_size = self.default_pixel_size
+
         # Load reference bands
         ref_ds: xr.Dataset = self.reference_mosaic.load(
             ref_bands_to_load, pixel_size=pixel_size, window=window, **kwargs

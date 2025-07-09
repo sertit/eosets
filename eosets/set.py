@@ -58,6 +58,17 @@ class GeometryCheck(ListEnum):
 GeometryCheckType = Union[GeometryCheck, str]
 
 
+@unique
+class DefaultPixelSize(ListEnum):
+    """Default Pixel size management."""
+
+    COARSEST = "coarsest"
+    """ The default pixel size is the coarsest pixel size of the set. """
+
+    MOST_RES = "most_resolute"
+    """ The default pixel size is the most resolute pixel size of the set. """
+
+
 class Set:
     """Abstract class of set. Basically implementing output management"""
 
@@ -130,6 +141,9 @@ class Set:
 
         self.nof_prods: int = 0
         """ Number of products. """
+
+        self.default_pixel_size: int = None
+        """ Default pixel size of the set: by default it is the coarsest pixel size of the set. """
 
         # Set tmp process
         self._set_tmp_process()
@@ -347,6 +361,38 @@ class Set:
         # Product types
         self.is_sar = self._has_only_sar(**kwargs)
         self.is_optical = self._has_only_optical(**kwargs)
+
+        # Default pixel size
+        if self.same_constellation:
+            self.default_pixel_size = self.get_attr("pixel_size", **kwargs)
+        else:
+            default_pixel_size = kwargs.pop("default_pixel_size", None)
+            heterogeneous_default_pixel_size = (
+                not self.same_constellation and default_pixel_size is None
+            )
+
+            if default_pixel_size is None:
+                default_pixel_size = DefaultPixelSize.COARSEST
+            elif isinstance(default_pixel_size, str):
+                default_pixel_size = DefaultPixelSize(default_pixel_size)
+
+            if default_pixel_size == DefaultPixelSize.COARSEST:
+                self.default_pixel_size = max(
+                    set(prod.pixel_size for prod in self.get_prods())
+                )
+            elif default_pixel_size == DefaultPixelSize.MOST_RES:
+                self.default_pixel_size = min(
+                    set(prod.pixel_size for prod in self.get_prods())
+                )
+            else:
+                self.default_pixel_size = default_pixel_size
+
+            # Throw warning
+            if heterogeneous_default_pixel_size:
+                LOGGER.warning(
+                    "No default pixel size provided even if the set created with heterogeneous constellations. "
+                    f"The default pixel size is therefore the coarsest of the set: {self.default_pixel_size} m."
+                )
 
     def get_first_prod(self) -> Product:
         """

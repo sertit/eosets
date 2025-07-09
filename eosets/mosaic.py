@@ -345,6 +345,10 @@ class Mosaic(Set):
         Returns:
             xr.Dataset: Wanted bands as xr.Datasets
         """
+        # Override default pixel size
+        if pixel_size is None:
+            pixel_size = self.default_pixel_size
+
         # Get merge function and extension
         merge_fct = getattr(rasters, self.mosaic_method.value)
 

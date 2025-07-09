@@ -329,6 +329,10 @@ class Series(Set):
         # Load bands
         window = kwargs.pop("window", self.footprint())
 
+        # Override default pixel size
+        if pixel_size is None:
+            pixel_size = self.default_pixel_size
+
         # Load reference mosaic bands
         reference_ds = self.reference_mosaic.load(
             bands, pixel_size=pixel_size, window=window, **kwargs

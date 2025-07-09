@@ -125,6 +125,7 @@ def test_mono_series(tmp_path):
         # Just see if this doesn't fail
 
 
+@s3_env
 def test_series_from_custom_prod(tmp_path):
     with tempenv.TemporaryEnvironment(
         {CI_EOREADER_BAND_FOLDER: get_ci_series_data_dir()}
@@ -157,3 +158,40 @@ def test_series_from_custom_prod(tmp_path):
         )
 
         ci.assert_val(len(series), 2, "Number of products")
+
+
+@s3_env
+@pytest.mark.parametrize(
+    ("default_pixel_size", "pixel_size"),
+    [
+        pytest.param(None, 30),
+        pytest.param("coarsest", 30),
+        pytest.param("most_resolute", 10),
+        pytest.param(50, 50),
+    ],
+)
+def test_default_pixel_size(default_pixel_size, pixel_size, tmp_path):
+    output = get_output(tmp_path, "SERIES", ON_DISK)
+    paths = [
+        [
+            data_folder()
+            / "S2A_MSIL1C_20200824T110631_N0209_R137_T29TQE_20200824T150432.SAFE",
+        ],
+        [
+            data_folder() / "LC08_L1TP_202032_20200929_20201006_02_T1",
+        ],
+    ]
+    aoi_path = data_folder() / "Fire_Spain.geojson"
+
+    # Create series by default
+    series = Series(
+        paths=paths,
+        remove_tmp=not ON_DISK,
+        default_pixel_size=default_pixel_size,
+        overlap_check="none",
+        contiguity_check="none",
+    )
+    series.output = os.path.join(output, series.condensed_name)
+    red = series.load(RED, window=aoi_path)[RED]
+    ci.assert_val(series.default_pixel_size, pixel_size, "Default pixel size")
+    ci.assert_val(round(red.rio.resolution()[0]), pixel_size, "Band pixel size")

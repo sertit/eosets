@@ -2,6 +2,7 @@
 
 ## 0.4.0 (2025-mm-dd)
 
+- **ENH: Better manage and advertize default resolution in case of heterogeneous Set** ([#20](https://github.com/sertit/eosets/issues/20))
 - **ENH: Add the `len()` property to any Set, giving the number of EOReader Products contained into the Set** 
 - FIX: Fix pair creation with paths and Mosaic instead of list of paths
 - FIX: Better management of `condensed_name` / `full_name` and `id`
