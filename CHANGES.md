@@ -1,6 +1,6 @@
 # Release History
 
-## 0.4.0 (2025-mm-dd)
+## 0.4.0 (2025-07-09)
 
 - **ENH: Better manage and advertize default resolution in case of heterogeneous Set** ([#20](https://github.com/sertit/eosets/issues/20))
 - **ENH: Add the `len()` property to any Set, giving the number of EOReader Products contained into the Set** 
