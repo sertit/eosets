@@ -152,15 +152,17 @@ def test_mosaic_from_custom_prod(tmp_path):
         )
         mosaic = Mosaic(pld_psh, mosaic_method="VRT", remove_tmp=not ON_DISK)
         mosaic.output = os.path.join(output, mosaic.condensed_name)
-        mosaic.stack(
-            [NDVI],
+        stack = mosaic.stack(
+            [NDVI, "RED", "BLUE"],
             pixel_size=60,
+            stack_path=output / "stack.tif",
         )
 
         # Some checks
         # TODO: add more
         ci.assert_val(mosaic.is_optical, True, "Is Optical?")
         ci.assert_val(mosaic.is_sar, False, "Is SAR?")
+        ci.assert_val(stack.rio.count, 3, "Count")
 
 
 def test_ci_eoreader_band_folder(tmp_path):
