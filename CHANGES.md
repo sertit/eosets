@@ -1,5 +1,10 @@
 # Release History
 
+## 0.4.1 (2025-mm-dd)
+
+- CI: Change CI bucket
+- CI: Update test mosaic with custom product: use several bands and write stack on disk
+
 ## 0.4.0 (2025-07-09)
 
 - **ENH: Better manage and advertize default resolution in case of heterogeneous Set** ([#20](https://github.com/sertit/eosets/issues/20))

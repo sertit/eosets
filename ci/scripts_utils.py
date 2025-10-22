@@ -35,7 +35,7 @@ def get_ci_db_dir() -> AnyPathType:
     if int(os.getenv(CI_EOSETS_S3, 0)):
         # ON S3
         unistra.define_s3_client()
-        return AnyPath("s3://sertit-eosets-ci")
+        return AnyPath("s3://sertit-ci/eosets")
     else:
         # ON DISK
         try:
@@ -52,22 +52,18 @@ def get_ci_db_dir() -> AnyPathType:
 
 def get_db_dir_on_disk() -> AnyPathType:
     """
-    Get database directory in the DS2
+    Get database director (on disk)
 
     Returns:
-        AnyPathType: Database directory
+        str: Database directory
     """
-    # ON DISK
-    db_dir = AnyPath(r"//ds2/database02/BASES_DE_DONNEES")
+    try:
+        db_dir = AnyPath(unistra.get_db2_path(), "BASES_DE_DONNEES")
+    except NotADirectoryError:
+        db_dir = AnyPath("/home", "ds2_db2", "BASES_DE_DONNEES")
 
     if not db_dir.is_dir():
-        try:
-            db_dir = AnyPath(unistra.get_db2_path(), "BASES_DE_DONNEES")
-        except NotADirectoryError:
-            db_dir = AnyPath("/home", "ds2_db2", "BASES_DE_DONNEES")
-
-    if not db_dir.is_dir():
-        raise NotADirectoryError("Impossible to open database directory !")
+        raise NotADirectoryError("Impossible to open database directory!")
 
     return db_dir
 

@@ -111,7 +111,7 @@ def _look_for_prod_band_file(
     # Get the band name
     band_name = to_str(band)[0]
 
-    # Spectral band case : use dedicated function
+    # Spectral band case: use a dedicated function
     if is_spectral_band(band):
         band_path = prod.get_band_paths(
             [band], pixel_size, writable=writable, **kwargs
