@@ -22,6 +22,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
     "myst_nb",
+    "IPython.sphinxext.ipython_console_highlighting"
 ]
 myst_enable_extensions = [
     "amsmath",
@@ -36,17 +37,22 @@ myst_enable_extensions = [
     "substitution",
 ]
 
+# Autodoc
+autodoc_default_options = {
+    'member-order': 'groupwise',
+    'show-inheritance': True,
+}
+
 # Notebook integration parameters
 nb_execution_mode = "cache"
-nb_execution_timeout = 3600
-
-# Manage new READTHEDOCS output mechanism
-cache_path = os.getenv('READTHEDOCS_OUTPUT')
-if cache_path is not None:
-    nb_execution_cache_path = f"{cache_path}/../docs/_build/.jupyter_cache"
+nb_execution_timeout = -1
 
 # This is going to generate a banner on top of each notebook
 nbsphinx_prolog = ""
+
+# Signature noise
+python_use_unqualified_type_names = True
+autodoc_typehints_format = "short"
 
 # sphinx-copybutton configurations
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
@@ -93,6 +99,7 @@ exclude_patterns = [
     "_build",
     "Thumbs.db",
     ".DS_Store",
+    "__init__.py",
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -110,9 +117,12 @@ html_theme = "sphinx_book_theme"
 # documentation.
 html_theme_options = {
     "repository_url": "https://github.com/sertit/eosets",
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "use_edit_page_button": False,
     "repository_branch": "main",
     "path_to_docs": "docs",
-    "repository_provider": "custom"
+    "use_download_button": False,
 }
 
 html_logo = "_static/eosets.png"
@@ -153,6 +163,7 @@ intersphinx_mapping = {
 
 add_function_parentheses = False
 add_module_names = False
+modindex_common_prefix = ["eosets."]
 
 
 def _html_page_context(app, pagename, templatename, context, doctree):
@@ -183,6 +194,41 @@ def my_doc_skip(app, what, name, obj, skip, options):
 
     return skip
 
+
+_GITHUB_ADMONITIONS = {
+    "> [!NOTE]": "note",
+    "> [!TIP]": "tip",
+    "> [!IMPORTANT]": "important",
+    "> [!WARNING]": "warning",
+    "> [!CAUTION]": "caution",
+}
+
+def run_convert_github_admonitions_to_rst(app, relative_path, parent_docname, lines):
+    # loop through lines, replace github admonitions
+    for i, orig_line in enumerate(lines):
+        orig_line_splits = orig_line.split("\n")
+        replacing = False
+        for j, line in enumerate(orig_line_splits):
+            # look for admonition key
+            for admonition_key in _GITHUB_ADMONITIONS:
+                if admonition_key in line:
+                    line = line.replace(admonition_key, ":::{" + _GITHUB_ADMONITIONS[admonition_key] + "}\n")
+                    # start replacing quotes in subsequent lines
+                    replacing = True
+                    break
+            else:
+                # replace indent to match directive
+                if replacing and "> " in line:
+                    line = line.replace("> ", "  ")
+                elif replacing:
+                    # missing "> ", so stop replacing and terminate directive
+                    line = f"\n:::\n{line}"
+                    replacing = False
+            # swap line back in splits
+            orig_line_splits[j] = line
+        # swap line back in original
+        lines[i] = "\n".join(orig_line_splits)
+
 import os, shutil
 def copy_static(app, docname):
     if app.builder.name == 'html':
@@ -196,3 +242,4 @@ def setup(app):
     app.connect('autodoc-skip-member', my_doc_skip)
     app.connect("html-page-context", _html_page_context)
     app.connect('build-finished', copy_static)
+    app.connect("include-read", run_convert_github_admonitions_to_rst)

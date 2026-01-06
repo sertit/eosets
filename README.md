@@ -8,7 +8,7 @@ EOSets implements these objects:
 
 ![eosets_objects](docs/_static/eosets_objects.png)
 
-`NB: multi-pairs are not implemented for now. We are waiting for true usecases. For now please use a list of pairs to process your data.`
+_NB: multi-pairs are not implemented for now. We are waiting for true usecases. For now please use a list of pairs to process your data._
 
 ## 🔮 Features
 
