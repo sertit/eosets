@@ -4,6 +4,7 @@
 
 - CI: Change CI bucket
 - CI: Update test mosaic with custom product: use several bands and write stack on disk
+- DOC: Update copyright to 2026 ([#33](https://github.com/sertit/eosets/issues/33))
 
 ## 0.4.0 (2025-07-09)
 

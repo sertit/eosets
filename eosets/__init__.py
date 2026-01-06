@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2025, SERTIT-ICube - France, https://sertit.unistra.fr/
+# Copyright 2026, SERTIT-ICube - France, https://sertit.unistra.fr/
 # This file is part of eosets project
 #     https://github.com/sertit/eosets
 #
