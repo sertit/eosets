@@ -19,7 +19,6 @@ import logging
 import os
 from collections import defaultdict
 from enum import unique
-from typing import Union
 
 import geopandas as gpd
 import numpy as np
@@ -84,9 +83,9 @@ class Series(Set):
         remove_tmp: bool = True,
         overlap_check: GeometryCheckType = GeometryCheck.EXTENT,
         contiguity_check: GeometryCheckType = GeometryCheck.EXTENT,
-        alignement: Union[Alignment, str] = Alignment.FIRST,
+        alignement: Alignment | str = Alignment.FIRST,
         coregister: bool = False,
-        reference_mosaic: Union[Mosaic, int, str] = None,
+        reference_mosaic: Mosaic | int = None,
         **kwargs,
     ):
         # Manage mosaics
@@ -249,7 +248,7 @@ class Series(Set):
             return self.mosaics[self._reference_mosaic]
 
     @reference_mosaic.setter
-    def reference_mosaic(self, mosaic: Union[Mosaic, int] = None):
+    def reference_mosaic(self, mosaic: Mosaic | int = None):
         if self.alignment == Alignment.FIRST:
             self._reference_mosaic = 0
         elif self.alignment == Alignment.LAST:

@@ -22,7 +22,7 @@ import shutil
 import tempfile
 from abc import abstractmethod
 from enum import unique
-from typing import Any, Union
+from typing import Any
 
 import geopandas as gpd
 import numpy as np
@@ -55,7 +55,7 @@ class GeometryCheck(ListEnum):
     """ No geometric check will be applied."""
 
 
-GeometryCheckType = Union[GeometryCheck, str]
+GeometryCheckType = GeometryCheck | str
 
 
 @unique

@@ -7,16 +7,14 @@ variables:
   EOSETS_CHANGES: eosets/**/[^_]*.{py,xml}
 
 lint:
-  image: python:3.11-buster
+  image: python:3.10-buster
   stage: lint
   script:
     - python -m pip install --upgrade pip
     - pip install ruff
     - ruff format && ruff check
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - when: always
+  except:
+    - tags
 
 pytest:
   image: $EO_CONTAINERS:geo_latest

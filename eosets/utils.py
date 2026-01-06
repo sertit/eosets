@@ -17,7 +17,6 @@
 
 import contextlib
 import logging
-from typing import Union
 
 from eoreader import utils
 from eoreader.products import Product
@@ -32,7 +31,7 @@ stack = utils.stack
 convert_to_uint16 = utils.convert_to_uint16
 write_path_in_attrs = utils.write_path_in_attrs
 
-AnyProductType = Union[AnyPathStrType, Product]
+AnyProductType = AnyPathStrType | Product
 """ Any Product Type, either a path or an eoreader.Product"""
 
 LOGGER = logging.getLogger(EOSETS_NAME)
@@ -50,14 +49,19 @@ try:
         to_str,
     )
 
-    BandType = Union[
-        str, SpectralBandNames, SarBandNames, CloudsBandNames, DemBandNames, BandNames
-    ]
+    BandType = (
+        str
+        | SpectralBandNames
+        | SarBandNames
+        | CloudsBandNames
+        | DemBandNames
+        | BandNames
+    )
     BandsType = BandsType
 except ImportError:
     from eoreader.bands import BandType
 
-    BandsType = Union[list, BandType]
+    BandsType = list | BandType
 
 
 def look_for_prod_band_file(prod: Product, band: BandType, pixel_size: float, **kwargs):

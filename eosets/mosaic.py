@@ -20,7 +20,6 @@ import logging
 import os
 from collections import defaultdict
 from enum import unique
-from typing import Union
 
 import geopandas as gpd
 import xarray as xr
@@ -62,12 +61,12 @@ class Mosaic(Set):
 
     def __init__(
         self,
-        paths: Union[list, AnyProductType],
+        paths: list | AnyProductType,
         output_path: AnyPathStrType = None,
         id: str = None,
         remove_tmp: bool = True,
         contiguity_check: GeometryCheckType = GeometryCheck.EXTENT,
-        mosaic_method: Union[MosaicMethod, str] = MosaicMethod.VRT,
+        mosaic_method: MosaicMethod | str = MosaicMethod.VRT,
         **kwargs,
     ):
         # Manage reference product
@@ -139,7 +138,7 @@ class Mosaic(Set):
 
     def _manage_prods(
         self,
-        paths: Union[list, AnyProductType],
+        paths: list | AnyProductType,
         contiguity_check: GeometryCheck,
         **kwargs,
     ):
@@ -147,7 +146,7 @@ class Mosaic(Set):
         Manage products attributes and check the compatibility of the mosaic's components
 
         Args:
-            paths (Union[list, AnyProductType]): Paths of the mosaic
+            paths (list | AnyProductType): Paths of the mosaic
             contiguity_check (GeometryCheck): Method to check the contiguity of the mosaic
             **kwargs: Other arguments
 
@@ -515,5 +514,5 @@ class Mosaic(Set):
         return xarr
 
 
-AnyMosaicType = Union[list, AnyProductType, Mosaic]
+AnyMosaicType = list | AnyProductType | Mosaic
 """ Any Mosaic type (either a list or paths or products, a path, a product or a mosaic itself) """

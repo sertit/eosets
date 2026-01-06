@@ -7,7 +7,7 @@
 - CI: Add weekly tests on Python 3.13 and 3.14 ([#30](https://github.com/sertit/eosets/issues/30))
 - DOC: Update copyright to 2026 ([#33](https://github.com/sertit/eosets/issues/33))
 - DEPS: Drop Python 3.9 support and support Python 3.13 and 3.14 ([#30](https://github.com/sertit/eosets/issues/30))
-- DEPS: Update deps to align on `sertit` and `eoreader` ([#30](https://github.com/sertit/eosets/issues/30))
+- DEPS: Update deps to align on `sertit` and `eoreader` ([#34](https://github.com/sertit/eosets/issues/34))
 
 ## 0.4.0 (2025-07-09)
 
