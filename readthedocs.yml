@@ -20,6 +20,9 @@ build:
 python:
   install:
     - requirements: requirements-doc.txt
+    - method: pip
+      path: .
+
 
 # Build from the docs/ directory with Sphinx
 sphinx:
