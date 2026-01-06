@@ -1,10 +1,5 @@
 version: 2
 
-# Build from the docs/ directory with Sphinx
-sphinx:
-  configuration: docs/conf.py
-  # Equivalent to -W and --keep-going => turn warnings into errors, keep going anyway but return an exit code 1
-  fail_on_warning: false
 build:
   os: ubuntu-22.04
   apt_packages:
@@ -13,9 +8,22 @@ build:
     - proj-bin
     - libgeos-dev
   tools:
-    python: "3.9"
+    python: "3.11"
+  jobs:
+    post_install:
+      - mkdir -p $READTHEDOCS_OUTPUT
+      - cd $READTHEDOCS_OUTPUT
+      # JUPYTER_CACHE_URL does not contain "?dl=1" because readthedocs encloses the variable with "'" when it contains "?"
+      - wget -O file.zip ${JUPYTER_CACHE_URL}"?dl=1"
+      - unzip file.zip -d $READTHEDOCS_OUTPUT
+
 python:
   install:
     - requirements: requirements-doc.txt
-    - method: pip
-      path: .
+
+# Build from the docs/ directory with Sphinx
+sphinx:
+  configuration: docs/conf.py
+  # Equivalent to -W and --keep-going => turn warnings into errors, keep going anyway but return an exit code 1
+  fail_on_warning: false
+
