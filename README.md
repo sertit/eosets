@@ -2,15 +2,15 @@
 
 This library aims to simplify any process working with sets of EO data handled by [EOReader](https://github.com/sertit/eoreader).
 
-## Content
+## 🛰️ Content
 
-EOSets implement these objects:
+EOSets implements these objects:
 
 ![eosets_objects](docs/_static/eosets_objects.png)
 
-NB: multi-pairs are not really implemented for now. We are waiting for true usecases. For now please use a list of pairs to process your data.
+`NB: multi-pairs are not implemented for now. We are waiting for true usecases. For now please use a list of pairs to process your data.`
 
-## Features
+## 🔮 Features
 
 Implemented features are similar to those implemented in EOReader:
 - `load`
@@ -19,7 +19,10 @@ Implemented features are similar to those implemented in EOReader:
 - `footprint`
 - ...
 
-### Default pixel size
+What you can do with EOReader is also possible with EOSets (with Mosaics, Pairs and Series).  
+Here is the [documentation of EOReader](https://eoreader.readthedocs.io/stable/) and the [list of available examples](https://eoreader.readthedocs.io/stable/#examples).
+
+### 💡 Default pixel size
 
 In case of heterogeneous Set, it is not straightforward to determine its default pixel size.
 A keyword `default_pixel_size` has been created, set to `coarsest` by default which means that the default pixel size of a heterogeneous set is the coarsest pixel size.
@@ -32,10 +35,19 @@ For example, in the case of a Series of Sentinel-2 and Landsat-8 data:
 - `default_pixel_size="most_resolute"`: the default pixel size is 10 meters
 - `default_pixel_size="20"`: the default pixel size is 20 meters
 
-## Examples
+## 🔗 Examples
 
 Available notebooks provided as examples:
 
 - [Mosaic](https://eosets.readthedocs.io/latest/notebooks/mosaic.html#)
 - [Pair](https://eosets.readthedocs.io/latest/notebooks/pair.html)
 - [Series](https://eosets.readthedocs.io/latest/notebooks/series.html)
+
+
+## 📝 License
+
+**EOSets** is licensed under Apache License v2.0. See LICENSE file for details.
+
+## 🖋️ Authors
+
+**EOSets** has been created by [ICube-SERTIT](https://sertit.unistra.fr/).
