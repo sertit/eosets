@@ -4,30 +4,34 @@ This library aims to simplify any process working with sets of EO data handled b
 
 ## 🛰️ Content
 
-EOSets implements these objects:
+EOSets implements the following objects:
 
 ![eosets_objects](docs/_static/eosets_objects.png)
 
-_NB: multi-pairs are not implemented for now. We are waiting for true usecases. For now please use a list of pairs to process your data._
+> [!NOTE] 
+> NB: multi-pairs are not implemented for now. We are waiting for true usecases.  
+> For now please use a list of pairs to process your data.
 
 ## 🔮 Features
 
-Implemented features are similar to those implemented in EOReader:
+### ➡️ Propagated from EOReader
+
+Implemented features are similar to those [implemented in EOReader](https://eoreader.readthedocs.io/latest/main_features.html):
 - `load`
 - `stack`
 - `extent`
 - `footprint`
 - ...
 
-What you can do with EOReader is also possible with EOSets (with Mosaics, Pairs and Series).  
+What you can do with EOReader is also possible with EOSets (with [Mosaics](https://eosets.readthedocs.io/latest/notebooks/mosaic.html), [Pairs](https://eosets.readthedocs.io/latest/notebooks/pair.html) and [Series](https://eosets.readthedocs.io/latest/notebooks/series.html)).  
 Here is the [documentation of EOReader](https://eoreader.readthedocs.io/stable/) and the [list of available examples](https://eoreader.readthedocs.io/stable/#examples).
 
 ### 💡 Default pixel size
 
 In case of heterogeneous Set, it is not straightforward to determine its default pixel size.
 A keyword `default_pixel_size` has been created, set to `coarsest` by default which means that the default pixel size of a heterogeneous set is the coarsest pixel size.
-This keyword can be set to either None, `coarsest`, `most_resolute` or any floating point number as a custom default resolution.
 
+This keyword can be set to either None, `coarsest`, `most_resolute` or any floating point number as a custom default resolution.
 
 For example, in the case of a Series of Sentinel-2 and Landsat-8 data:
 - Nothing specified: the default pixel size is 30 meters
