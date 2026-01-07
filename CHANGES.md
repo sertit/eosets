@@ -1,6 +1,6 @@
 # Release History
 
-## 0.5.0 (2025-mm-dd)
+## 0.4.1 (2025-01-07)
 
 - CI: Change CI bucket
 - CI: Update test mosaic with custom product: use several bands and write stack on disk
