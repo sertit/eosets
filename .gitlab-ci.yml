@@ -93,7 +93,7 @@ pytest_end_to_end_313:
     - pip install -r requirements.txt
     - pip install -e .
   script:
-    - python ci -m pytest -v --durations=0 --cov-report term --cov=eosets --log-cli-level DEBUG --capture=tee-sys
+    - python -m pytest ci -v --durations=0 --cov-report term --cov=eosets --log-cli-level DEBUG --capture=tee-sys
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   tags:
     - sertit
@@ -115,7 +115,7 @@ pytest_end_to_end_314:
     - pip install -r requirements.txt
     - pip install -e .
   script:
-    - python ci -m pytest -v --durations=0 --cov-report term --cov=eosets --log-cli-level DEBUG --capture=tee-sys
+    - python -m pytest ci -v --durations=0 --cov-report term --cov=eosets --log-cli-level DEBUG --capture=tee-sys
   coverage: '/TOTAL\s+\d+\s+\d+\s+(\d+%)/'
   tags:
     - sertit
