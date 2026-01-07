@@ -15,7 +15,7 @@ EOSets implements the following objects:
 
 ## 🔮 Features
 
-### ➡️ Propagated from EOReader
+### Propagated from EOReader
 
 Implemented features are similar to those [implemented in EOReader](https://eoreader.readthedocs.io/latest/main_features.html):
 - `load`
@@ -27,7 +27,7 @@ Implemented features are similar to those [implemented in EOReader](https://eore
 What you can do with EOReader is also possible with EOSets (with [Mosaics](https://eosets.readthedocs.io/latest/notebooks/mosaic.html), [Pairs](https://eosets.readthedocs.io/latest/notebooks/pair.html) and [Series](https://eosets.readthedocs.io/latest/notebooks/series.html)).  
 Here is the [documentation of EOReader](https://eoreader.readthedocs.io/stable/) and the [list of available examples](https://eoreader.readthedocs.io/stable/#examples).
 
-### 💡 Default pixel size
+### Default pixel size
 
 In case of heterogeneous Set, it is not straightforward to determine its default pixel size.
 A keyword `default_pixel_size` has been created, set to `coarsest` by default which means that the default pixel size of a heterogeneous set is the coarsest pixel size.
