@@ -47,7 +47,7 @@ dependencies = [
 dynamic = ["version"]
 
 [tool.setuptools.dynamic]
-version = {attr = "eosets.__version__"}
+version = {attr = "eosets.__meta__.__version__"}
 
 [project.urls]
 Bug_Tracker = "https://github.com/sertit/eosets/issues"

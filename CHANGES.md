@@ -1,5 +1,9 @@
 # Release History
 
+## 0.4.2 (2025-mm-dd)
+
+- FIX: Don't except ImportErrors in `__init__` and therefore look for version internally in `__meta__` file
+
 ## 0.4.1 (2025-01-07)
 
 - CI: Change CI bucket

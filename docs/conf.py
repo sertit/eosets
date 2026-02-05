@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import eosets
-import os
+from eosets.__meta__ import __version__
 
 # -- General configuration ------------------------------------------------
 
@@ -78,7 +77,7 @@ author = "ICube-SERTIT"
 # built documents.
 #
 # The short X.Y version.
-version = eosets.__version__
+version = __version__
 
 # The full version, including alpha/beta/rc tags.
 release = version
