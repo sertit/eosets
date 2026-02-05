@@ -27,7 +27,7 @@ from typing import Any
 import geopandas as gpd
 import numpy as np
 import xarray as xr
-from eoreader.bands import BandType, to_band, to_str
+from eoreader.bands import BandsType, BandType, to_band, to_str
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER
 from eoreader.products import Product, SensorType
 from sertit import AnyPath, files, path
@@ -36,7 +36,7 @@ from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
 
 from eosets import EOSETS_NAME
 from eosets.env_vars import CI_EOSETS_BAND_FOLDER
-from eosets.utils import BandsType, convert_to_uint16, stack, write, write_path_in_attrs
+from eosets.utils import convert_to_uint16, stack, write, write_path_in_attrs
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 

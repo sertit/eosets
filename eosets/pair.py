@@ -22,7 +22,7 @@ from enum import unique
 import geopandas as gpd
 import xarray as xr
 from eoreader import cache
-from eoreader.bands import to_band, to_str
+from eoreader.bands import BandsType, to_band, to_str
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
 from sertit import AnyPath, path, rasters
@@ -34,7 +34,6 @@ from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import AnyMosaicType, Mosaic
 from eosets.set import GeometryCheck, GeometryCheckType, Set
 from eosets.utils import (
-    BandsType,
     read,
     stack,
     write,

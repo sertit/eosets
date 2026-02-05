@@ -19,6 +19,7 @@ import contextlib
 import logging
 
 from eoreader import utils
+from eoreader.bands import BandType, is_spectral_band, to_str
 from eoreader.products import Product
 from sertit import AnyPath
 from sertit.types import AnyPathStrType, AnyPathType
@@ -35,33 +36,6 @@ AnyProductType = AnyPathStrType | Product
 """ Any Product Type, either a path or an eoreader.Product"""
 
 LOGGER = logging.getLogger(EOSETS_NAME)
-
-# Band(s) Type
-try:
-    from eoreader.bands import (
-        BandNames,
-        BandsType,
-        CloudsBandNames,
-        DemBandNames,
-        SarBandNames,
-        SpectralBandNames,
-        is_spectral_band,
-        to_str,
-    )
-
-    BandType = (
-        str
-        | SpectralBandNames
-        | SarBandNames
-        | CloudsBandNames
-        | DemBandNames
-        | BandNames
-    )
-    BandsType = BandsType
-except ImportError:
-    from eoreader.bands import BandType
-
-    BandsType = list | BandType
 
 
 def look_for_prod_band_file(prod: Product, band: BandType, pixel_size: float, **kwargs):

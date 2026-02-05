@@ -24,7 +24,7 @@ import geopandas as gpd
 import numpy as np
 import xarray as xr
 from eoreader import cache
-from eoreader.bands import to_band, to_str
+from eoreader.bands import BandsType, to_band, to_str
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
@@ -36,7 +36,7 @@ from eosets import EOSETS_NAME
 from eosets.exceptions import IncompatibleProducts
 from eosets.mosaic import Mosaic
 from eosets.set import GeometryCheck, GeometryCheckType, Set
-from eosets.utils import BandsType, read, stack
+from eosets.utils import read, stack
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 READER = Reader()

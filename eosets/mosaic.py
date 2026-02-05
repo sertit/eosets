@@ -24,7 +24,7 @@ from enum import unique
 import geopandas as gpd
 import xarray as xr
 from eoreader import cache
-from eoreader.bands import to_band, to_str
+from eoreader.bands import BandsType, to_band, to_str
 from eoreader.products import Product
 from eoreader.reader import Reader
 from eoreader.utils import UINT16_NODATA
@@ -37,7 +37,6 @@ from eosets.exceptions import IncompatibleProducts
 from eosets.set import GeometryCheck, GeometryCheckType, Set
 from eosets.utils import (
     AnyProductType,
-    BandsType,
     look_for_prod_band_file,
     read,
     stack,
