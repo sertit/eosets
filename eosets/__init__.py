@@ -25,6 +25,6 @@ EOSETS_NAME = "eosets"
 
 __all__ = ["Mosaic", "Pair", "Series"]
 
-from mosaic import Mosaic
-from pair import Pair
-from series import Series
+from eosets.mosaic import Mosaic
+from eosets.pair import Pair
+from eosets.series import Series
