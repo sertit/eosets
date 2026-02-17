@@ -1,7 +1,8 @@
 # Release History
 
-## 0.4.2 (2025-mm-dd)
+## 0.5.0 (2025-mm-dd)
 
+- ENH: Add `set.get_mosaics()` to retrieve all the mosaics contained in any set
 - FIX: Don't except ImportErrors in `__init__` and therefore look for version internally in `__meta__` file
 
 ## 0.4.1 (2025-01-07)

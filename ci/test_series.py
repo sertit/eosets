@@ -68,6 +68,10 @@ def test_s2_series(tmp_path):
         series = Series(paths=s2_paths, remove_tmp=not ON_DISK)
         series.output = os.path.join(output, series.condensed_name)
 
+        # Get mosaics and get prods
+        ci.assert_val(len(series.get_mosaics()), 2, "get_mosaics")
+        ci.assert_val(len(series.get_prods()), 2, "get_prods")
+
         # Check extent
         compare_geom("extent", series, series_folder(), ON_DISK)
 

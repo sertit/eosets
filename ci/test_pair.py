@@ -93,6 +93,17 @@ def _test_pair_core(paths: dict, tmp_path) -> None:
         # Check some properties
         assert pair.is_homogeneous
 
+        # Get mosaics and get prods
+        ci.assert_val(len(pair.get_mosaics()), len(paths), "get_mosaics")
+
+        nof_prods = 0
+        for prods in paths.values():
+            try:
+                nof_prods += len(prods)
+            except TypeError:
+                nof_prods += 1
+        ci.assert_val(len(pair.get_prods()), nof_prods, "get_prods")
+
         # TODO: check with input mosaic, check secondary-reference
 
         # Test to see if there is an error

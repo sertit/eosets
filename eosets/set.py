@@ -22,7 +22,7 @@ import shutil
 import tempfile
 from abc import abstractmethod
 from enum import unique
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
 import numpy as np
@@ -37,6 +37,9 @@ from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
 from eosets import EOSETS_NAME
 from eosets.env_vars import CI_EOSETS_BAND_FOLDER
 from eosets.utils import convert_to_uint16, stack, write, write_path_in_attrs
+
+if TYPE_CHECKING:
+    from eosets import Mosaic
 
 LOGGER = logging.getLogger(EOSETS_NAME)
 
@@ -277,8 +280,20 @@ class Set:
 
         return out, exists
 
+    def get_prods(self) -> list[Product]:
+        """
+        Get all the products as a list.
+
+        Returns:
+            list: Products list
+        """
+        prods = []
+        for mos in self.get_mosaics():
+            prods += list(mos.prods.values())
+        return prods
+
     @abstractmethod
-    def get_prods(self) -> list:
+    def get_mosaics(self) -> list["Mosaic"]:
         """
         Get all the products as a list.
 

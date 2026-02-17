@@ -23,6 +23,7 @@ import geopandas as gpd
 import xarray as xr
 from eoreader import cache
 from eoreader.bands import BandsType, to_band, to_str
+from eoreader.products import Product
 from eoreader.utils import UINT16_NODATA
 from rasterio.enums import Resampling
 from sertit import AnyPath, path, rasters
@@ -144,18 +145,17 @@ class Pair(Set):
             # Never mind for non-existing files: they have already been copied :)
             pass
 
-    def get_prods(self) -> list:
+    def get_mosaics(self) -> list[Mosaic]:
         """
         Get all the products as a list.
 
         Returns:
             list: Products list
         """
-        prods = self.reference_mosaic.get_prods()
-
+        mosaics = [self.reference_mosaic]
         if self.has_secondary:
-            prods += self.secondary_mosaic.get_prods()
-        return prods
+            mosaics.append(self.secondary_mosaic)
+        return mosaics
 
     def _manage_mosaics(
         self,
@@ -193,7 +193,6 @@ class Pair(Set):
         self.reference_id: str = self.reference_mosaic.id
 
         # Information regarding the pair composition
-        from eoreader.products import Product
 
         self.has_secondary: bool = (
             path.is_path(secondary_paths)

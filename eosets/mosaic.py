@@ -20,6 +20,7 @@ import logging
 import os
 from collections import defaultdict
 from enum import unique
+from typing import Self
 
 import geopandas as gpd
 import xarray as xr
@@ -206,14 +207,14 @@ class Mosaic(Set):
             f"{'-'.join([prod.condensed_name for prod in self.get_prods()])}"
         )
 
-    def get_prods(self) -> list:
+    def get_mosaics(self) -> list[Self]:
         """
         Get all the products as a list.
 
         Returns:
             list: Products list
         """
-        return list(self.prods.values())
+        return [self]
 
     def check_compatibility(self, first_prod: Product, prod: Product) -> None:
         """

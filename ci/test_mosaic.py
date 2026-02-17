@@ -85,6 +85,10 @@ def test_s2_mosaic(tmp_path):
             pixel_size=600,
         )
 
+        # Get mosaics and get prods
+        ci.assert_val(mosaic.get_mosaics(), [mosaic], "get_mosaics")
+        ci.assert_val(len(mosaic.get_prods()), 2, "get_prods")
+
         # Test it
         if ON_DISK:
             ci_path = mosaic_out

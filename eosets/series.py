@@ -145,18 +145,14 @@ class Series(Set):
         for mos in self.mosaics:
             mos.output = self.output
 
-    def get_prods(self) -> list:
+    def get_mosaics(self) -> list[Mosaic]:
         """
-        Get all the products as a list.
+        Get all the mosaics contained in the set as a list.
 
         Returns:
-            list: Products list
+            list[Mosaic]: Mosaic list
         """
-        prods = []
-        for mos in self.mosaics:
-            prods += mos.get_prods()
-
-        return prods
+        return self.mosaics
 
     def _manage_mosaics(
         self,
