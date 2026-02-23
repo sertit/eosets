@@ -461,6 +461,7 @@ class Mosaic(Set):
         Returns:
             xr.DataArray: Stack as a DataArray
         """
+        bands = to_band(bands)
         if stack_path:
             stack_path = AnyPath(stack_path)
             if stack_path.is_file():
@@ -473,10 +474,10 @@ class Mosaic(Set):
 
         # Stack bands
         if save_as_int:
-            nodata = kwargs.get("nodata", UINT16_NODATA)
+            kwargs["nodata"] = kwargs.get("nodata", UINT16_NODATA)
         else:
-            nodata = kwargs.get("nodata", self.nodata)
-        stk, dtype = stack(band_ds, nodata=nodata, **kwargs)
+            kwargs["nodata"] = kwargs.get("nodata", self.nodata)
+        stk, dtype = stack(band_ds, **kwargs)
 
         # Update stack's attributes
         stk = self._update_attrs(stk, bands, **kwargs)
