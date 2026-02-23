@@ -360,7 +360,7 @@ class Mosaic(Set):
 
         # Get the bands to be loaded
         bands_to_load, bands_path = self.get_bands_to_load(
-            bands, self._get_band_suffix()
+            bands, self._get_band_suffix(), **kwargs
         )
 
         # Check validity of the bands

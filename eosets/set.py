@@ -27,9 +27,10 @@ from typing import TYPE_CHECKING, Any
 import geopandas as gpd
 import numpy as np
 import xarray as xr
-from eoreader.bands import BandsType, BandType, to_band, to_str
+from eoreader.bands import BandNames, BandsType, BandType, to_band, to_str
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER
 from eoreader.products import Product, SensorType
+from eoreader.utils import get_window_suffix
 from sertit import AnyPath, files, path
 from sertit.misc import ListEnum
 from sertit.types import AnyPathStrType, AnyPathType, AnyXrDataStructure
@@ -279,6 +280,46 @@ class Set:
             out = self._get_tmp_folder(writable=True) / filename
 
         return out, exists
+
+    def get_band_file_name(
+        self,
+        band: BandNames,
+        pixel_size: float = None,
+        size: list | tuple = None,
+        suffix: str = "tif",
+        **kwargs,
+    ) -> str:
+        """
+        Get the filename of any band, managing windows and other args.
+
+        Args:
+            band (BandNames): Wanted band
+            pixel_size (float): Band pixel size in meters
+            size (tuple | list): Size of the array (width, height). Not used if pixel_size is provided.
+            kwargs: Additional arguments
+
+        Returns:
+            str: Band file name
+        """
+        if pixel_size is None:
+            if size is not None:
+                pixel_size = self.get_first_prod()._pixel_size_from_img_size(
+                    size, **kwargs
+                )
+            else:
+                pixel_size = self.pixel_size
+
+        # Pixel size
+        res_str = self.get_first_prod()._pixel_size_to_str(pixel_size)
+
+        # Window
+        win_suffix = get_window_suffix(kwargs.get("window"))
+        if win_suffix:
+            win_suffix = f"_{win_suffix}"
+
+        # Specific if needed
+
+        return f"{self.id}_{to_str(band, as_list=False)}_{res_str.replace('.', '-')}{win_suffix}.{suffix}"
 
     def get_prods(self) -> list[Product]:
         """
@@ -549,13 +590,13 @@ class Set:
 
         return xds
 
-    def get_bands_to_load(self, bands, out_suffix="tif") -> (list, dict):
+    def get_bands_to_load(self, bands, out_suffix="tif", **kwargs) -> (list, dict):
         # Get the bands to be loaded
         bands_path = {}
         bands_to_load = []
         for band in to_band(bands):
             band_path, exists = self._get_out_path(
-                f"{self.id}_{to_str(band)[0]}.{out_suffix}"
+                self.get_band_file_name(band, suffix=out_suffix, **kwargs)
             )
             bands_path[band] = band_path
             if not exists:

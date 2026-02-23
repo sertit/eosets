@@ -21,6 +21,7 @@ import logging
 from eoreader import utils
 from eoreader.bands import BandType, is_spectral_band, to_str
 from eoreader.products import Product
+from eoreader.utils import get_window_suffix
 from sertit import AnyPath
 from sertit.types import AnyPathStrType, AnyPathType
 
@@ -100,10 +101,14 @@ def _look_for_prod_band_file(
             band_path = None
 
     else:
-        # No window in non-spectral paths (for now ?)
         with contextlib.suppress(StopIteration):
             # Check if the band exists in a non-writable directory
             band_regex = f"*{prod.condensed_name}*_{band_name}_*"
+            if "window" in kwargs:
+                band_regex += f"{get_window_suffix(kwargs.get('window'))}*"
+            LOGGER.debug(
+                f"Looking for {band_regex} in {prod._get_band_folder(writable=writable)}"
+            )
             band_path = next(prod._get_band_folder(writable=writable).glob(band_regex))
 
     return band_path
