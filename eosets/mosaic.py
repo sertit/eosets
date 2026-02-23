@@ -20,7 +20,11 @@ import logging
 import os
 from collections import defaultdict
 from enum import unique
-from typing import Self
+
+try:
+    from typing import Self
+except Exception:
+    from typing_extensions import Self
 
 import geopandas as gpd
 import xarray as xr
