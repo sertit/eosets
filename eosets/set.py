@@ -594,7 +594,7 @@ class Set:
             if dtype == np.uint16:
                 stack_to_save, _ = stack(band_ds, dtype=dtype, **kwargs)
                 stack_to_save = self._update_attrs(
-                    stack_to_save, band_ds.keys(), **kwargs
+                    stack_to_save, list(band_ds.keys()), **kwargs
                 )
 
         if stack_to_save is None:
