@@ -8,6 +8,7 @@
 - FIX: Fix band list type when writing a stack on disk
 - FIX: Fix nodata management when stacking a mosaic
 - FIX: Better condensed name for pairs
+- FIX: Use condensed name rather than ID when naming the bands (if ID exists, condensed name == ID)
 
 ## 0.4.1 (2025-01-07)
 

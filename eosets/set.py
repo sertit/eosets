@@ -319,7 +319,7 @@ class Set:
 
         # Specific if needed
 
-        return f"{self.id}_{to_str(band, as_list=False)}_{res_str.replace('.', '-')}{win_suffix}.{suffix}"
+        return f"{self.condensed_name}_{to_str(band, as_list=False)}_{res_str.replace('.', '-')}{win_suffix}.{suffix}"
 
     def get_prods(self) -> list[Product]:
         """
