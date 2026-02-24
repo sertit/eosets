@@ -108,8 +108,13 @@ class Pair(Set):
         if self.has_secondary:
             self.full_name += f"_{self.secondary_id}"
 
-        self.condensed_name = self.id if self.id is not None else self.full_name
-        # TODO (how to name pair ???)
+        if self.id:
+            self.condensed_name = self.id
+        else:
+            self.condensed_name = f"{self.reference_mosaic.condensed_name}"
+            if self.has_secondary:
+                self.condensed_name += f"_{self.secondary_mosaic.condensed_name}"
+        # TODO (how to name pairs ???)
 
         # Post init at the set level
         self.post_init(**kwargs)
