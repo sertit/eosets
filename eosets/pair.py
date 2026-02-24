@@ -335,7 +335,9 @@ class Pair(Set):
         diff_bands = to_band(diff_bands)
 
         # Check existing diff paths
-        diff_bands_to_load, diff_bands_path = self.get_bands_to_load(diff_bands)
+        diff_bands_to_load, diff_bands_path = self.get_bands_to_load(
+            diff_bands, pixel_size=pixel_size, **kwargs
+        )
 
         # Overload reference and secondary bands with diff bands
         ref_bands_to_load = reference_bands.copy()
@@ -368,7 +370,9 @@ class Pair(Set):
             diff_dict = {}
             for band in diff_bands:
                 diff_path, exists = self._get_out_path(
-                    self.get_band_file_name(band, window=window, **kwargs)
+                    self.get_band_file_name(
+                        band, window=window, pixel_size=pixel_size, **kwargs
+                    )
                 )
                 if exists:
                     diff_arr = read(

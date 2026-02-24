@@ -3,7 +3,7 @@
 ## 0.5.0 (2025-mm-dd)
 
 - **ENH: Add `set.get_mosaics()` to retrieve all the mosaics contained in any set**
-- **ENH: Handle windows in paths**
+- **ENH: Handle windows in paths and disambiguate the band paths**
 - FIX: Don't except ImportErrors in `__init__` and therefore look for version internally in `__meta__` file
 - FIX: Fix band list type when writing a stack on disk
 - FIX: Fix nodata management when stacking a mosaic
