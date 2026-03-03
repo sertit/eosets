@@ -104,8 +104,8 @@ def _look_for_prod_band_file(
         with contextlib.suppress(StopIteration):
             # Check if the band exists in a non-writable directory
             band_regex = f"*{prod.condensed_name}*_{band_name}_*"
-            window = get_window_suffix(kwargs.get("window"))
-            if window is not None:
+            window = get_window_suffix(kwargs.get("window"), max_extent=prod.extent())
+            if window is not None and window:
                 band_regex += f"{window}*"
             LOGGER.debug(
                 f"Looking for {band_regex} in {prod._get_band_folder(writable=writable)}"
