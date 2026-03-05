@@ -177,13 +177,18 @@ class Set:
         """Cleaning up _tmp directory"""
         self.clear()
 
-        # -- Remove temp folders
         if self._tmp_output:
+            # Clean the temporary folder in any case if existing
             self._tmp_output.cleanup()
 
         elif self._remove_tmp:
+            # If we need to remove the temporary files, remove them and clean it
             files.remove(self._tmp_process)
             self.clean_tmp()
+
+        elif not any(self._tmp_process.iterdir()):
+            # If tmp_process is empty on deletion, no need to keep it and remove it
+            files.remove(self._tmp_process)
 
     @property
     def output(self) -> AnyPathType:
