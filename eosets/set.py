@@ -197,11 +197,12 @@ class Set:
 
     def _set_tmp_process(self):
         """Set temporary folder avoiding recursive tmps."""
-        if self._output.name == "tmp":
+        tmp_process = f"tmp_{self.condensed_name}"
+        if self._output.name == tmp_process:
             # Avoid nested "tmp" folders
             self._tmp_process = self._output
         else:
-            self._tmp_process = self._output.joinpath("tmp")
+            self._tmp_process = self._output / tmp_process
 
         os.makedirs(self._tmp_process, exist_ok=True)
 

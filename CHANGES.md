@@ -9,6 +9,7 @@
 - FIX: Fix nodata management when stacking a mosaic
 - FIX: Better condensed name for pairs
 - FIX: Use condensed name rather than ID when naming the bands (if ID exists, condensed name == ID)
+- FIX: Add a better temporary folder name, including the condensed name of the set
 - OPTIM: Don't set a window name if band files if the window corresponds to the band extent
 
 ## 0.4.1 (2025-01-07)
