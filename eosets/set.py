@@ -214,34 +214,36 @@ class Set:
         Args:
             value (AnyPathStrType): Output path of the set
         """
-        # Set the new output
-        self._output = AnyPath(value)
-        if not path.is_cloud_path(self._output):
-            self._output = self._output.resolve()
+        new_output = AnyPath(value)
+        if self._output != new_output:
+            # Set the new output
+            self._output = new_output
+            if not path.is_cloud_path(self._output):
+                self._output = self._output.resolve()
 
-        # Create temporary process folder (where to store all temporary files) in the new output folder
-        old_tmp_process = self._tmp_process
-        self._set_tmp_process()
+            # Create temporary process folder (where to store all temporary files) in the new output folder
+            old_tmp_process = self._tmp_process
+            self._set_tmp_process()
 
-        # Update output for every mosaics and products composing the set
-        self._manage_output()
+            # Update output for every mosaics and products composing the set
+            self._manage_output()
 
-        # Move all files from old process folder into the new one
-        if old_tmp_process.exists():
-            for file in path.listdir_abspath(old_tmp_process):
-                # Don't overwrite file
-                if file.exists():
-                    with contextlib.suppress(shutil.Error):
-                        shutil.move(str(file), self._tmp_process)
+            # Move all files from old process folder into the new one
+            if old_tmp_process.exists():
+                for file in path.listdir_abspath(old_tmp_process):
+                    # Don't overwrite file
+                    if file.is_file():
+                        with contextlib.suppress(shutil.Error):
+                            shutil.move(str(file), self._tmp_process)
 
-        # Remove old tmp process
-        if old_tmp_process is not None and old_tmp_process.exists():
-            files.remove(old_tmp_process)
+            # Remove old tmp process
+            if old_tmp_process is not None and old_tmp_process.exists():
+                files.remove(old_tmp_process)
 
-        # Remove old output if existing into the new output
-        if self._tmp_output is not None:
-            self._tmp_output.cleanup()
-            self._tmp_output = None
+            # Remove old output if existing into the new output
+            if self._tmp_output is not None:
+                self._tmp_output.cleanup()
+                self._tmp_output = None
 
     def _get_tmp_folder(self, writable: bool = False) -> AnyPathType:
         """
