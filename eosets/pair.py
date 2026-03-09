@@ -119,37 +119,6 @@ class Pair(Set):
         # Post init at the set level
         self.post_init(**kwargs)
 
-    def clean_tmp(self):
-        """
-        Clean the temporary directory of the current pair
-        """
-        self.reference_mosaic.clean_tmp()
-
-        if self.has_secondary:
-            self.secondary_mosaic.clean_tmp()
-
-    def clear(self):
-        """
-        Clear this pair's cache
-        """
-        # Delete all cached properties and functions
-        self.reference_mosaic.clear()
-
-        if self.has_secondary:
-            self.secondary_mosaic.clear()
-
-    def _manage_output(self):
-        """
-        Manage the output specifically for this child class
-        """
-        self.reference_mosaic.output = self.output
-        try:
-            if self.has_secondary:
-                self.secondary_mosaic.output = self.output
-        except FileNotFoundError:
-            # Never mind for non-existing files: they have already been copied :)
-            pass
-
     def get_mosaics(self) -> list[Mosaic]:
         """
         Get all the products as a list.

@@ -152,26 +152,19 @@ class Set:
         # Set tmp process
         self._set_tmp_process()
 
-    @abstractmethod
     def clean_tmp(self):
         """
         Clean the temporary directory of the current product
         """
-        raise NotImplementedError
+        for mos in self.get_mosaics():
+            mos.clean_tmp()
 
-    @abstractmethod
     def clear(self):
         """
         Clear this product's cache
         """
-        raise NotImplementedError
-
-    @abstractmethod
-    def _manage_output(self):
-        """
-        Manage the output specifically for this child class
-        """
-        raise NotImplementedError
+        for mos in self.get_mosaics():
+            mos.clear()
 
     def __del__(self):
         """Cleaning up _tmp directory"""
@@ -200,15 +193,16 @@ class Set:
         """
         return self._output
 
-    def _set_tmp_process(self):
-        """Set temporary folder avoiding recursive tmps."""
-        tmp_process = f"tmp_{self.condensed_name}"
-        if self._output.name == tmp_process:
-            # Avoid nested "tmp" folders
-            self._tmp_process = self._output
-        else:
-            self._tmp_process = self._output / tmp_process
+    def _manage_output(self):
+        """
+        Manage the output specifically for this child class
+        """
+        for mos in self.get_mosaics():
+            mos.output = self.output
 
+    def _set_tmp_process(self):
+        """Set temporary process folder (where to store all temporary files) in the new output folder"""
+        self._tmp_process = self._output / f"tmp_{self.condensed_name}"
         os.makedirs(self._tmp_process, exist_ok=True)
 
     @output.setter

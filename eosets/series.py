@@ -123,28 +123,6 @@ class Series(Set):
         # Post init at the set level
         self.post_init(**kwargs)
 
-    def clean_tmp(self):
-        """
-        Clean the temporary directory of the current series
-        """
-        for mos in self.mosaics:
-            mos.clean_tmp()
-
-    def clear(self):
-        """
-        Clear this series' cache
-        """
-        # Delete all cached properties and functions
-        for mos in self.mosaics:
-            mos.clear()
-
-    def _manage_output(self):
-        """
-        Manage the output specifically for this child class
-        """
-        for mos in self.mosaics:
-            mos.output = self.output
-
     def get_mosaics(self) -> list[Mosaic]:
         """
         Get all the mosaics contained in the set as a list.
