@@ -176,10 +176,11 @@ class Set:
 
         elif self._remove_tmp:
             # If we need to remove the temporary files, remove them and clean it
-            files.remove(self._tmp_process)
+            if self._tmp_process.exists():
+                files.remove(self._tmp_process)
             self.clean_tmp()
 
-        elif not any(self._tmp_process.iterdir()):
+        elif self._tmp_process.exists() and not any(self._tmp_process.iterdir()):
             # If tmp_process is empty on deletion, no need to keep it and remove it
             files.remove(self._tmp_process)
 
@@ -218,26 +219,27 @@ class Set:
         if not path.is_cloud_path(self._output):
             self._output = self._output.resolve()
 
-        # Create temporary process folder
+        # Create temporary process folder (where to store all temporary files) in the new output folder
         old_tmp_process = self._tmp_process
         self._set_tmp_process()
 
-        # Update for every sets
+        # Update output for every mosaics and products composing the set
         self._manage_output()
 
         # Move all files from old process folder into the new one
         if old_tmp_process.exists():
             for file in path.listdir_abspath(old_tmp_process):
                 # Don't overwrite file
-                with contextlib.suppress(shutil.Error):
-                    shutil.move(str(file), self._tmp_process)
+                if file.exists():
+                    with contextlib.suppress(shutil.Error):
+                        shutil.move(str(file), self._tmp_process)
 
         # Remove old tmp process
-        if old_tmp_process is not None:
+        if old_tmp_process is not None and old_tmp_process.exists():
             files.remove(old_tmp_process)
 
         # Remove old output if existing into the new output
-        if self._tmp_output:
+        if self._tmp_output is not None:
             self._tmp_output.cleanup()
             self._tmp_output = None
 

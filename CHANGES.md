@@ -11,6 +11,7 @@
 - FIX: Use condensed name rather than ID when naming the bands (if ID exists, condensed name == ID)
 - FIX: Add a better temporary folder name, including the condensed name of the set
 - FIX: Remove temporary process folder if empty on set deletion, even if remove_tmp is set to False
+- FIX: Don't try to remove non-existing folders
 - OPTIM: Don't set a window name if band files if the window corresponds to the band extent
 
 ## 0.4.1 (2025-01-07)
