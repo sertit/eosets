@@ -321,9 +321,14 @@ class Set:
         if win_suffix:
             win_suffix = f"_{win_suffix}"
 
-        # Specific if needed
+        band_str = to_str(band, as_list=False)
 
-        return f"{self.condensed_name}_{to_str(band, as_list=False)}_{res_str.replace('.', '-')}{win_suffix}.{suffix}"
+        # Specific if needed
+        is_diff = kwargs.get("is_diff", False)
+        if is_diff:
+            band_str = f"d{band_str}"
+
+        return f"{self.condensed_name}_{band_str}_{res_str.replace('.', '-')}{win_suffix}.{suffix}"
 
     def get_prods(self) -> list[Product]:
         """

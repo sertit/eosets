@@ -12,6 +12,7 @@
 - FIX: Add a better temporary folder name, including the condensed name of the set
 - FIX: Remove temporary process folder if empty on set deletion, even if remove_tmp is set to False
 - FIX: Don't try to remove non-existing folders
+- FIX: Add a `d` behing the band for difference paths (i.e. `dNBR`)
 - OPTIM: Don't set a window name if band files if the window corresponds to the band extent
 
 ## 0.4.1 (2025-01-07)

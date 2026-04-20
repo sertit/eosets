@@ -340,7 +340,11 @@ class Pair(Set):
             for band in diff_bands:
                 diff_path, exists = self._get_out_path(
                     self.get_band_file_name(
-                        band, window=window, pixel_size=pixel_size, **kwargs
+                        band,
+                        window=window,
+                        pixel_size=pixel_size,
+                        is_diff=True,
+                        **kwargs,
                     )
                 )
                 if exists:
