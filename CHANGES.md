@@ -1,12 +1,12 @@
 # Release History
 
-## 0.6.0 (2025-mm-dd)
+## 0.6.0 (2026-mm-dd)
 
 - **ENH: Change logo**
 - CI: Use templates
 - LINT: Lint YAML files
 
-## 0.5.0 (2025-05-05)
+## 0.5.0 (2026-05-05)
 
 - **ENH: Add `set.get_mosaics()` to retrieve all the mosaics contained in any set**
 - **ENH: Handle windows in paths and disambiguate the band paths**
@@ -21,7 +21,7 @@
 - FIX: Add a `d` behing the band for difference paths (i.e. `dNBR`)
 - OPTIM: Don't set a window name if band files if the window corresponds to the band extent
 
-## 0.4.1 (2025-01-07)
+## 0.4.1 (2026-01-07)
 
 - CI: Change CI bucket
 - CI: Update test mosaic with custom product: use several bands and write stack on disk
