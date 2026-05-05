@@ -1,6 +1,6 @@
 # Release History
 
-## 0.6.0 (2026-mm-dd)
+## 0.5.1 (2026-05-05)
 
 - **ENH: Change logo**
 - CI: Use templates
