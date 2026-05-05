@@ -1,6 +1,6 @@
 # Release History
 
-## 0.5.0 (2025-mm-dd)
+## 0.5.0 (2025-05-05)
 
 - **ENH: Add `set.get_mosaics()` to retrieve all the mosaics contained in any set**
 - **ENH: Handle windows in paths and disambiguate the band paths**
