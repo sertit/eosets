@@ -1,5 +1,9 @@
 # Release History
 
+## 0.6.0 (2025-mm-dd)
+
+- **ENH: Change logo**
+
 ## 0.5.0 (2025-05-05)
 
 - **ENH: Add `set.get_mosaics()` to retrieve all the mosaics contained in any set**
