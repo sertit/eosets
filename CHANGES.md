@@ -3,6 +3,8 @@
 ## 0.6.0 (2025-mm-dd)
 
 - **ENH: Change logo**
+- CI: Use templates
+- LINT: Lint YAML files
 
 ## 0.5.0 (2025-05-05)
 

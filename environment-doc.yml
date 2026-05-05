@@ -1,3 +1,4 @@
+---
 name: eosets-doc
 channels:
   - conda-forge

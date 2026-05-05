@@ -1,7 +1,7 @@
+---
 name: Mirror and run GitLab CI
-
-on: [ push ]
-
+on:
+  - push
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,7 +12,7 @@ jobs:
       - name: Mirror + trigger CI
         uses: SvanBoxel/gitlab-mirror-and-ci-action@master
         with:
-          args: "https://${{ secrets.GITLAB_HOSTNAME }}/sertit/libraries/eosets"
+          args: https://${{ secrets.GITLAB_HOSTNAME }}/sertit/libraries/eosets
         env:
           GITLAB_HOSTNAME: ${{ secrets.GITLAB_HOSTNAME }}
           GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
