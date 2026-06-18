@@ -1,5 +1,9 @@
 # Release History
 
+## 0.5.2 (2026-mm-dd)
+
+- FIX: Fix band naming with sensor-specific issues
+
 ## 0.5.1 (2026-05-05)
 
 - **ENH: Change logo**

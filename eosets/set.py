@@ -328,7 +328,14 @@ class Set:
         if is_diff:
             band_str = f"d{band_str}"
 
-        return f"{self.condensed_name}_{band_str}_{res_str.replace('.', '-')}{win_suffix}.{suffix}"
+        # Additional suffix
+        other_suffixes = (
+            self.get_first_prod()._get_band_file_name_sensor_specific_suffix(
+                band, **kwargs
+            )
+        )
+
+        return f"{self.condensed_name}_{band_str}_{res_str.replace('.', '-')}{win_suffix}{other_suffixes}.{suffix}"
 
     def get_prods(self) -> list[Product]:
         """
