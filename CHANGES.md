@@ -1,5 +1,9 @@
 # Release History
 
+## 0.5.3 (2026-06-19)
+
+- FIX: Simplify `look_for_prod_band_file`'s logic, reducing potential unstabilities.
+
 ## 0.5.2 (2026-06-19)
 
 - FIX: Fix band naming with sensor-specific issues

@@ -15,15 +15,12 @@
 # limitations under the License.
 """Utils file"""
 
-import contextlib
 import logging
 
 from eoreader import utils
-from eoreader.bands import BandType, is_spectral_band, to_str
+from eoreader.bands import BandType, to_str
 from eoreader.products import Product
-from eoreader.utils import get_window_suffix
-from sertit import AnyPath
-from sertit.types import AnyPathStrType, AnyPathType
+from sertit.types import AnyPathStrType
 
 from eosets import EOSETS_NAME
 
@@ -52,64 +49,14 @@ def look_for_prod_band_file(prod: Product, band: BandType, pixel_size: float, **
     Returns:
         AnyPathType: Band file path
     """
-    band_path = _look_for_prod_band_file(
-        prod, band, pixel_size, writable=False, **kwargs
-    )
+    band_path = prod.get_band_path(band, pixel_size, writable=False, **kwargs)
 
-    if band_path is None:
-        band_path = _look_for_prod_band_file(
-            prod, band, pixel_size, writable=True, **kwargs
-        )
+    if not band_path.exists():
+        band_path = prod.get_band_path(band, pixel_size, writable=True, **kwargs)
 
-    if band_path is None:
+    if not band_path.exists():
         raise FileNotFoundError(
             f"Non-existing processed band {to_str(band)[0]} in {prod.condensed_name}!"
         )
-
-    return band_path
-
-
-def _look_for_prod_band_file(
-    prod: Product, band: BandType, pixel_size: float, writable: bool, **kwargs
-) -> AnyPathType:
-    """
-    Look for a product's band file
-
-    Args:
-        prod (Product): Product to look in
-        band (BandType): Band to look for
-        pixel_size (float): Pixel size in meters (if needed)
-        writable (bool): Whether to force look in writable folder or not
-        **kwargs: Other args
-
-    Returns:
-        AnyPathType: Band file path
-    """
-    band_path = None
-
-    # Get the band name
-    band_name = to_str(band)[0]
-
-    # Spectral band case: use a dedicated function
-    if is_spectral_band(band):
-        band_path = prod.get_band_paths(
-            [band], pixel_size, writable=writable, **kwargs
-        )[band]
-
-        # Check if the band exists in a writable directory if not existing in the default one
-        if not AnyPath(band_path).is_file():
-            band_path = None
-
-    else:
-        with contextlib.suppress(StopIteration):
-            # Check if the band exists in a non-writable directory
-            band_regex = f"*{prod.condensed_name}*_{band_name}_*"
-            window = get_window_suffix(kwargs.get("window"), max_extent=prod.extent())
-            if window is not None and window:
-                band_regex += f"{window}*"
-            LOGGER.debug(
-                f"Looking for {band_regex} in {prod._get_band_folder(writable=writable)}"
-            )
-            band_path = next(prod._get_band_folder(writable=writable).glob(band_regex))
 
     return band_path
