@@ -1,6 +1,6 @@
 # Release History
 
-## 0.5.2 (2026-mm-dd)
+## 0.5.2 (2026-06-19)
 
 - FIX: Fix band naming with sensor-specific issues
 
