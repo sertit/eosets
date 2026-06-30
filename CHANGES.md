@@ -1,8 +1,8 @@
 # Release History
 
-## 0.5.3 (2026-mm-dd)
+## 0.5.3 (2026-06-30)
 
-- FIX: Simplify `look_for_prod_band_file`'s logic, reducing potential unstabilities.
+- FIX: Simplify `look_for_prod_band_file`'s logic, reducing potential instabilities.
 
 ## 0.5.2 (2026-06-19)
 
