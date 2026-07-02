@@ -295,7 +295,7 @@ class Pair(Set):
             secondary_bands = []
         if diff_bands and not self.has_secondary:
             LOGGER.warning(
-                "This pair does not have secondary bands. Impoossible to compute difference bands."
+                "This pair does not have secondary bands. Impossible to compute difference bands."
             )
             diff_bands = []
 
@@ -482,7 +482,7 @@ class Pair(Set):
             secondary_bands = []
         if diff_bands and not self.has_secondary:
             LOGGER.warning(
-                "This pair does not have secondary bands. Impoossible to compute difference bands."
+                "This pair does not have secondary bands. Impossible to compute difference bands."
             )
             diff_bands = []
 

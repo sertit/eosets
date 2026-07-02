@@ -272,7 +272,7 @@ class Mosaic(Set):
                     "The mosaic should have a contiguous footprint!"
                 )
         else:
-            LOGGER.warning("The contiguity of your mosaic won't be checked!")
+            LOGGER.debug("The contiguity of your mosaic won't be checked!")
             pass
 
     def read_mtd(self):
