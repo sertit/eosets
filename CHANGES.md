@@ -1,5 +1,9 @@
 # Release History
 
+## 0.5.4 (2026-07-dd)
+
+- FIX: Drop index in mosaic's geometries (footprint/extent) to avoid issues when creating pairs or series with multiple images per mosaics
+
 ## 0.5.3 (2026-06-30)
 
 - FIX: Simplify `look_for_prod_band_file`'s logic, reducing potential instabilities.
