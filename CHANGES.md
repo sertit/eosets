@@ -1,6 +1,6 @@
 # Release History
 
-## 0.5.4 (2026-07-dd)
+## 0.5.4 (2026-07-03)
 
 - FIX: Drop index in mosaic's geometries (footprint/extent) to avoid issues when creating pairs or series with multiple images per mosaics
 
