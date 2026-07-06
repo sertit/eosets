@@ -3,9 +3,10 @@
 import os
 
 import pytest
-from eoreader.bands import NBR, NDVI, NIR
+from eoreader.bands import NBR, NDVI, NIR, SLOPE
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER, DEM_PATH
 from eoreader.reader import Reader
+from rasterio.windows import Window
 from sertit import ci
 from tempenv import tempenv
 
@@ -105,6 +106,27 @@ def test_s2_mosaic(tmp_path):
         if not ON_DISK:
             mosaic.clear()
             mosaic.clean_tmp()
+
+
+@s3_env
+def test_mosaic_dem(tmp_path):
+    """Test mosaic object with Sentinel-2 products"""
+    with tempenv.TemporaryEnvironment(
+        {DEM_PATH: get_copdem_30(), CI_EOREADER_BAND_FOLDER: get_ci_mosaic_data_dir()}
+    ):
+        s2_32ulu = (
+            data_folder()
+            / "S2B_MSIL2A_20220228T102849_N0400_R108_T32ULU_20220228T134712.SAFE"
+        )
+
+        output = get_output(tmp_path, "MOSAIC_DEM", ON_DISK)
+
+        # Create object
+        mosaic = Mosaic([s2_32ulu], mosaic_method="VRT", remove_tmp=not ON_DISK)
+        mosaic.output = os.path.join(output, mosaic.condensed_name)
+
+        # Juste make it work for DEM bands
+        mosaic.load(SLOPE, pixel_size=30, window=Window(0, 0, 250, 250))
 
 
 @s3_env

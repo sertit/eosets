@@ -1,5 +1,9 @@
 # Release History
 
+## 0.5.5 (2026-07-06)
+
+- FIX: Add forgotten DEM management in `look_for_prod_band_file`'s logic.
+
 ## 0.5.4 (2026-07-03)
 
 - FIX: Drop index in mosaic's geometries (footprint/extent) to avoid issues when creating pairs or series with multiple images per mosaics

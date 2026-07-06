@@ -16,10 +16,14 @@
 """Utils file"""
 
 import logging
+import os
 
 from eoreader import utils
-from eoreader.bands import BandType, to_str
+from eoreader.bands import DEM, HILLSHADE, SLOPE, BandType, is_dem, to_str
+from eoreader.env_vars import DEM_PATH
+from eoreader.keywords import DEM_KW, HILLSHADE_KW, SLOPE_KW
 from eoreader.products import Product
+from sertit import path
 from sertit.types import AnyPathStrType
 
 from eosets import EOSETS_NAME
@@ -49,10 +53,26 @@ def look_for_prod_band_file(prod: Product, band: BandType, pixel_size: float, **
     Returns:
         AnyPathType: Band file path
     """
-    band_path = prod.get_band_path(band, pixel_size, writable=False, **kwargs)
+    dem_name = ""
+    if is_dem(band):
+        # We already checked if it exists when loading the DEM band
+        dem_path = os.environ.get(DEM_PATH)
+        if band == DEM:
+            dem_path = kwargs.get(DEM_KW, dem_path)
+        elif band == SLOPE:
+            dem_path = kwargs.get(SLOPE_KW, dem_path)
+        elif band == HILLSHADE:
+            dem_path = kwargs.get(HILLSHADE_KW, dem_path)
+
+        dem_name = path.get_filename(dem_path)
+    band_path = prod.get_band_path(
+        band, pixel_size, dem_name=dem_name, writable=False, **kwargs
+    )
 
     if not band_path.exists():
-        band_path = prod.get_band_path(band, pixel_size, writable=True, **kwargs)
+        band_path = prod.get_band_path(
+            band, pixel_size, dem_name=dem_name, writable=True, **kwargs
+        )
 
     if not band_path.exists():
         raise FileNotFoundError(
