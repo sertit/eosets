@@ -271,9 +271,8 @@ class Mosaic(Set):
                 raise IncompatibleProducts(
                     "The mosaic should have a contiguous footprint!"
                 )
-        else:
+        elif self.nof_prods > 1:
             LOGGER.debug("The contiguity of your mosaic won't be checked!")
-            pass
 
     def read_mtd(self):
         """Read the pair's metadata, but not implemented for now."""

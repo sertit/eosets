@@ -1,5 +1,9 @@
 # Release History
 
+## 0.5.6 (2026-mm-dd)
+
+- LOG: Only log absence of contiguity check if there is more than one product in mosaic
+
 ## 0.5.5 (2026-07-06)
 
 - FIX: Add forgotten DEM management in `look_for_prod_band_file`'s logic.
