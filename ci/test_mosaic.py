@@ -7,7 +7,7 @@ from eoreader.bands import NBR, NDVI, NIR, SLOPE
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER, DEM_PATH
 from eoreader.reader import Reader
 from rasterio.windows import Window
-from sertit import ci
+from sertit import ci, path
 from tempenv import tempenv
 
 from ci.scripts_utils import (
@@ -21,6 +21,7 @@ from ci.scripts_utils import (
 )
 from eosets import Mosaic
 from eosets.exceptions import IncompatibleProducts
+from eosets.set import GeometryCheck
 
 ci.reduce_verbosity()
 
@@ -218,6 +219,41 @@ def test_ci_eoreader_band_folder(tmp_path):
         ci.assert_val(mosaic.is_sar, False, "Is SAR?")
 
         ci.assert_val(len(mosaic), 1, "Number of products")
+
+
+def test_mosaic_from_custom_prod_disconnected(tmp_path):
+    # Get a custom stack path
+    fw082_folder = data_folder() / "FW082"
+    fw082_pre_paths = fw082_folder.glob("PRE/*/*.TIL")
+
+    vantor_band_map = {"BLUE": 1, "GREEN": 2, "RED": 3, "NIR": 4}
+    pre_prods = []
+    for prod_path in fw082_pre_paths:
+        pre_prods.append(
+            Reader().open(
+                prod_path,
+                custom=True,
+                sensor_type="OPTICAL",
+                band_map=vantor_band_map,
+                condensed_name=path.get_filename(prod_path),
+            )
+        )
+
+    # Mosaic is disconnected, so contiguity test should fail
+    with pytest.raises(IncompatibleProducts):
+        Mosaic(
+            pre_prods,
+            remove_tmp=not ON_DISK,
+        )
+
+    # Don't check contiguity and it should work
+    mosaic = Mosaic(
+        pre_prods, remove_tmp=not ON_DISK, contiguity_check=GeometryCheck.NONE
+    )
+
+    assert len(mosaic.extent()) == 2
+
+    ci.assert_val(len(mosaic), 2, "Number of products")
 
 
 # TODO: Add tests for SAR mosaics

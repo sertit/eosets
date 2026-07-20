@@ -2,13 +2,14 @@
 import os
 
 import pytest
-from eoreader.bands import RED
+from eoreader.bands import NIR, RED
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER
 from eoreader.reader import Reader
-from sertit import ci
+from sertit import ci, misc, path, vectors
 from tempenv import tempenv
 
 from ci.scripts_utils import (
+    LOGGER,
     compare_geom,
     data_folder,
     get_ci_data_dir,
@@ -16,8 +17,9 @@ from ci.scripts_utils import (
     s3_env,
     series_folder,
 )
-from eosets import Series
+from eosets import Mosaic, Series
 from eosets.exceptions import IncompatibleProducts
+from eosets.set import GeometryCheck
 
 ci.reduce_verbosity()
 
@@ -199,3 +201,111 @@ def test_default_pixel_size(default_pixel_size, pixel_size, tmp_path):
     red = series.load(RED, window=aoi_path)[RED]
     ci.assert_val(series.default_pixel_size, pixel_size, "Default pixel size")
     ci.assert_val(round(red.rio.resolution()[0]), pixel_size, "Band pixel size")
+
+
+def test_series_from_custom_prod_disconnected(tmp_path):
+    with tempenv.TemporaryEnvironment(
+        # {}
+        {CI_EOREADER_BAND_FOLDER: get_ci_series_data_dir()}
+    ):
+        output = get_output(tmp_path, "SERIES", ON_DISK) / "disconnected_series"
+
+        # Get a custom stack path
+        fw082_folder = data_folder() / "FW082"
+        fw082_pre_paths = fw082_folder.glob("PRE/*/*.TIL")
+        fw082_post_paths = fw082_folder.glob("POST/*/*.TIL")
+
+        vantor_band_map = {"BLUE": 1, "GREEN": 2, "RED": 3, "NIR": 4}
+        pre_prods = []
+        for prod_path in fw082_pre_paths:
+            pre_prods.append(
+                Reader().open(
+                    prod_path,
+                    custom=True,
+                    sensor_type="OPTICAL",
+                    band_map=vantor_band_map,
+                    condensed_name=path.get_filename(prod_path),
+                )
+            )
+        post_prods = []
+        for prod_path in fw082_post_paths:
+            post_prods.append(
+                Reader().open(
+                    prod_path,
+                    custom=True,
+                    sensor_type="OPTICAL",
+                    band_map=vantor_band_map,
+                    condensed_name=path.get_filename(prod_path),
+                )
+            )
+
+        # Don't check contiguity and it should work even if the reference mosaic is not contiguous
+        LOGGER.info("Create pair")
+        pre_mos = Mosaic(
+            pre_prods,
+            output_path=output,
+            remove_tmp=not ON_DISK,
+            contiguity_check=GeometryCheck.NONE,
+            id="FW082_PRE_2025_09",
+        )
+        post_mos = Mosaic(
+            post_prods,
+            output_path=output,
+            remove_tmp=not ON_DISK,
+            contiguity_check=GeometryCheck.NONE,
+            id="FW082_POST_2026_07_08",
+        )
+        series = Series(
+            [pre_mos, post_mos],
+            remove_tmp=not ON_DISK,
+            contiguity_check=GeometryCheck.NONE,
+        )
+        series.output = output
+
+        # Check extent
+        LOGGER.info("Check extents")
+        if ON_DISK:
+            extent = series.extent()
+            vectors.write(extent, series.output / "extent.geojson")
+        else:
+            extent = compare_geom(
+                "extent", series, series_folder(), ON_DISK, sub_name=output.name
+            )
+
+        assert len(extent) == 2
+        assert len(series.mosaics[0].extent()) == 2
+        assert len(series.mosaics[1].extent()) == 1
+
+        # Check footprint (only if eoreader > 0.25.0)
+        # Otherwise the nodata is not set for custom products and extent == footprint
+        if misc.compare_version("eoreader", "0.25.0", ">="):
+            LOGGER.info("Check footprints")
+            if ON_DISK:
+                footprint = series.footprint()
+                vectors.write(extent, series.output / "footprint.geojson")
+            else:
+                footprint = compare_geom(
+                    "footprint", series, series_folder(), ON_DISK, sub_name=output.name
+                )
+
+            assert len(footprint) == 2
+            assert len(series.mosaics[0].footprint()) == 2
+            assert len(series.mosaics[1].footprint()) == 1
+
+        LOGGER.info("Check number of products")
+        ci.assert_val(len(series), 4, "Number of products")
+
+        # Check output
+        # Stack with a pixel_size of 10m
+        series_out = series.output / "stack.tif"
+        bands = [NIR, "NDVI"]
+        assert series.has_bands(bands)
+        series.stack(
+            bands=bands,
+            pixel_size=20,
+            stack_path=series_out,
+        )
+
+        # Test it
+        ci_path = series_out if ON_DISK else series_folder() / output.name / "stack.tif"
+        ci.assert_raster_almost_equal(series_out, ci_path)

@@ -2,6 +2,7 @@
 
 ## 0.5.6 (2026-mm-dd)
 
+- FIX: Fix non-contiguous mosaic and its handling in other sets
 - LOG: Only log absence of contiguity check if there is more than one product in mosaic
 
 ## 0.5.5 (2026-07-06)

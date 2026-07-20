@@ -187,9 +187,13 @@ class Series(Set):
                     mos_geom: gpd.GeoDataFrame = getattr(
                         mos, str(overlap_check.value)
                     )()
-                    if not reference_geom.intersects(
-                        mos_geom.to_crs(self.reference_mosaic.crs)
-                    ).all():
+                    if (
+                        not reference_geom.dissolve()
+                        .intersects(
+                            mos_geom.dissolve().to_crs(self.reference_mosaic.crs)
+                        )
+                        .all()
+                    ):
                         raise IncompatibleProducts("All mosaics should overlap!")
 
         # Fill other attributes

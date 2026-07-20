@@ -5,7 +5,7 @@ import pytest
 from eoreader.bands import BLUE, GREEN, NIR, PAN, RED
 from eoreader.env_vars import CI_EOREADER_BAND_FOLDER, DEM_PATH
 from eoreader.reader import Reader
-from sertit import ci
+from sertit import ci, misc, path, vectors
 from tempenv import tempenv
 
 from ci.scripts_utils import (
@@ -17,8 +17,9 @@ from ci.scripts_utils import (
     pair_folder,
     s3_env,
 )
+from eosets import Mosaic, Pair
 from eosets.exceptions import IncompatibleProducts
-from eosets.pair import Pair
+from eosets.set import LOGGER, GeometryCheck
 
 ci.reduce_verbosity()
 
@@ -224,6 +225,116 @@ def test_pair_from_custom_prod(tmp_path):
         )
 
         ci.assert_val(len(pair), 2, "Number of products")
+
+
+def test_pair_from_custom_prod_disconnected(tmp_path):
+    with tempenv.TemporaryEnvironment(
+        # {}
+        {CI_EOREADER_BAND_FOLDER: get_ci_pair_data_dir()}
+    ):
+        output = get_output(tmp_path, "PAIR", ON_DISK) / "disconnected_pair"
+
+        # Get a custom stack path
+        fw082_folder = data_folder() / "FW082"
+        fw082_pre_paths = fw082_folder.glob("PRE/*/*.TIL")
+        fw082_post_paths = fw082_folder.glob("POST/*/*.TIL")
+
+        vantor_band_map = {"BLUE": 1, "GREEN": 2, "RED": 3, "NIR": 4}
+        pre_prods = []
+        for prod_path in fw082_pre_paths:
+            pre_prods.append(
+                Reader().open(
+                    prod_path,
+                    custom=True,
+                    sensor_type="OPTICAL",
+                    band_map=vantor_band_map,
+                    condensed_name=path.get_filename(prod_path),
+                )
+            )
+        post_prods = []
+        for prod_path in fw082_post_paths:
+            post_prods.append(
+                Reader().open(
+                    prod_path,
+                    custom=True,
+                    sensor_type="OPTICAL",
+                    band_map=vantor_band_map,
+                    condensed_name=path.get_filename(prod_path),
+                )
+            )
+
+        # Don't check contiguity and it should work even if the reference mosaic is not contiguous
+        LOGGER.info("Create pair")
+        pre_mos = Mosaic(
+            pre_prods,
+            output_path=output,
+            remove_tmp=not ON_DISK,
+            contiguity_check=GeometryCheck.NONE,
+            id="FW082_PRE_2025_09",
+        )
+        post_mos = Mosaic(
+            post_prods,
+            output_path=output,
+            remove_tmp=not ON_DISK,
+            contiguity_check=GeometryCheck.NONE,
+            id="FW082_POST_2026_07_08",
+        )
+        pair = Pair(
+            **{"reference_paths": pre_mos, "secondary_paths": post_mos},
+            remove_tmp=not ON_DISK,
+            contiguity_check=GeometryCheck.NONE,
+        )
+        pair.output = output
+
+        # Check extent
+        LOGGER.info("Check extents")
+        if ON_DISK:
+            extent = pair.extent()
+            vectors.write(extent, pair.output / "extent.geojson")
+        else:
+            extent = compare_geom(
+                "extent", pair, pair_folder(), ON_DISK, sub_name=output.name
+            )
+
+        assert len(extent) == 2
+        assert len(pair.reference_mosaic.extent()) == 2
+        assert len(pair.secondary_mosaic.extent()) == 1
+
+        # Check footprint (only if eoreader > 0.25.0)
+        # Otherwise the nodata is not set for custom products and extent == footprint
+        if misc.compare_version("eoreader", "0.25.0", ">="):
+            LOGGER.info("Check footprints")
+            if ON_DISK:
+                footprint = pair.footprint()
+                vectors.write(extent, pair.output / "footprint.geojson")
+            else:
+                footprint = compare_geom(
+                    "footprint", pair, pair_folder(), ON_DISK, sub_name=output.name
+                )
+
+            assert len(footprint) == 2
+            assert len(pair.reference_mosaic.footprint()) == 2
+            assert len(pair.secondary_mosaic.footprint()) == 1
+
+        LOGGER.info("Check number of products")
+        ci.assert_val(len(pair), 4, "Number of products")
+
+        # Check output
+        # Stack with a pixel_size of 10m
+        pair_out = pair.output / "stack.tif"
+        bands = [NIR, "NDVI"]
+        assert pair.has_bands(bands)
+        pair.stack(
+            reference_bands=bands,
+            secondary_bands=bands,
+            diff_bands=bands,
+            pixel_size=20,
+            stack_path=pair_out,
+        )
+
+        # Test it
+        ci_path = pair_out if ON_DISK else pair_folder() / output.name / "stack.tif"
+        ci.assert_raster_almost_equal(pair_out, ci_path)
 
 
 @s3_env

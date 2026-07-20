@@ -383,7 +383,7 @@ class Mosaic(Set):
                     pixel_size = prod.pixel_size
 
                 # Load bands
-                prod.load(bands_to_load, pixel_size, **kwargs)
+                prod.load(bands_to_load, pixel_size=pixel_size, **kwargs)
 
                 # Store paths
                 for band in bands_to_load:

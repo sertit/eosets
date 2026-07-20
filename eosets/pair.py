@@ -194,9 +194,11 @@ class Pair(Set):
                 sec_geom: gpd.GeoDataFrame = getattr(
                     self.secondary_mosaic, str(overlap_check.value)
                 )()
-                if not ref_geom.intersects(
-                    sec_geom.to_crs(self.reference_mosaic.crs)
-                ).all():
+                if (
+                    not ref_geom.dissolve()
+                    .intersects(sec_geom.dissolve().to_crs(self.reference_mosaic.crs))
+                    .all()
+                ):
                     raise IncompatibleProducts(
                         "Reference and secondary mosaics should overlap!"
                     )

@@ -115,21 +115,32 @@ def get_ci_data_dir() -> AnyPathType:
         return get_ci_dir().joinpath("CI_DATA")
 
 
-def compare_geom(geom_type: str, obj: Any, obj_folder: AnyPathType, on_disk: bool):
+def compare_geom(
+    geom_type: str,
+    obj: Any,
+    obj_folder: AnyPathType,
+    on_disk: bool,
+    sub_name: str = None,
+):
     # Check extent
     geom_out = obj.output / f"{geom_type}.geojson"
     if on_disk:
         geom_ci_path = geom_out
     else:
-        geom_ci_path = obj_folder / obj.condensed_name / geom_out.name
+        if not sub_name:
+            sub_name = obj.condensed_name
+        geom_ci_path = obj_folder / sub_name / geom_out.name
 
-    getattr(obj, geom_type)().to_file(geom_out)
+    geom = getattr(obj, geom_type)()
+    geom.to_file(geom_out)
 
     try:
         ci.assert_geom_equal(geom_ci_path, geom_out)
     except AssertionError:
         LOGGER.warning("Extent not equal, trying almost equal.")
         ci.assert_geom_almost_equal(geom_ci_path, geom_out)
+
+    return geom
 
 
 def s3_env(*args, **kwargs):
