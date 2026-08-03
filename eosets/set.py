@@ -663,3 +663,11 @@ class Set:
 
     def __len__(self):
         return len(self.get_prods())
+
+    @abstractmethod
+    def load(self, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    def stack(self, **kwargs):
+        raise NotImplementedError
