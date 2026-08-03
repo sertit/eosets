@@ -154,7 +154,11 @@ def get_copdem_30():
 
 def get_output(tmp, folder, debug=False):
     if debug:
-        out_path = Path(__file__).resolve().parent / "ci_output"
+        use_s3 = int(os.getenv(CI_EOSETS_S3, 0))
+        out_path = (
+            Path(__file__).resolve().parent
+            / f"ci_output{'_local' if not use_s3 else ''}"
+        )
         out_path.mkdir(parents=True, exist_ok=True)
         return out_path / folder
     else:

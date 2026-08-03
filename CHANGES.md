@@ -5,6 +5,7 @@
 - FIX: Add abstract methods for `load` and `stack` in set
 - FIX: Fix non-contiguous mosaic and its handling in other sets
 - LOG: Only log absence of contiguity check if there is more than one product in mosaic
+- CI: output locally in different folders whether the tests are running on disk of through the cloud
 
 ## 0.5.5 (2026-07-06)
 
