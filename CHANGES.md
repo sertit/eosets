@@ -1,6 +1,6 @@
 # Release History
 
-## 0.5.6 (2026-mm-dd)
+## 0.5.6 (2026-09-28)
 
 - FIX: Add abstract methods for `load` and `stack` in set
 - FIX: Fix non-contiguous mosaic and its handling in other sets
