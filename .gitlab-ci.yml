@@ -7,7 +7,7 @@ variables:
   EOSETS_CHANGES: eosets/**/[^_]*.{py,xml}
 include:
   - project: sertit/groupware
-    file: /ci_templates/lint_3_10.yaml
+    file: /ci_templates/lint.yaml
   - project: sertit/groupware
     file: /ci_templates/pytest.yaml
 .rules_pytest:

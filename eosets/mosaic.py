@@ -24,7 +24,7 @@ from enum import unique
 try:
     from typing import Self
 except Exception:
-    from typing_extensions import Self
+    from typing import Self
 
 import geopandas as gpd
 import xarray as xr
